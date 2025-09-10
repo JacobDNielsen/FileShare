@@ -33,15 +33,17 @@ jobs:
               | (st($e.action; $e.pull_request.merged)) as $sc
               | $e.pull_request as $pr
               | $pr.user as $user
+              | ($pr.body | trunc) as $desc
               | {
-                  content: "[\($repo)] PR \($sc.state): #\($e.number) \($pr.title)\n\($pr.html_url)",
-                  embeds: [{
-                    author: {name: $user.login, url: ("https://github.com/" + $user.login), icon_url: $user.avatar_url},
-                    title:  "[\($repo)] PR \($sc.state): #\($e.number) \($pr.title)",
-                    url:    $pr.html_url,
-                    description: ($pr.body | trunc),
-                    color:  $sc.color
-                  }]
+                  embeds: [
+                    ({
+                      author: { name: $user.login, url: ("https://github.com/" + $user.login), icon_url: $user.avatar_url },
+                      title:  "[\($repo)] PR \($sc.state): #\($e.number) \($pr.title)",
+                      url:    $pr.html_url,
+                      color:  $sc.color
+                    }
+                    + (if $desc == "" then {} else { description: $desc } end))
+                  ]
                 }
             ' \
           | curl -sS -H "Content-Type: application/json" -d @- "$WEBHOOK"
