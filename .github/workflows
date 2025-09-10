@@ -1,0 +1,47 @@
+name: PR → Discord
+
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post PR → Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          ev="$GITHUB_EVENT_PATH"
+
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --slurpfile ev "$ev" '
+              def trunc:
+                if . == null or . == "" then ""
+                else if (.|length) > 1200 then .[0:1199] + "…" else . end end;
+
+              def st(action; merged):
+                if   action=="closed" and (merged==true) then {state:"merged",   color:3066993}   # green
+                elif action=="closed"                       then {state:"closed",   color:15158332}  # red
+                elif action=="reopened"                     then {state:"reopened", color:15844367}  # gold
+                else                                              {state:"opened",   color:3447003}   # blue
+                end;
+
+              ($ev[0]) as $e
+              | (st($e.action; $e.pull_request.merged)) as $sc
+              | $e.pull_request as $pr
+              | $pr.user as $user
+              | {
+                  content: "[\($repo)] PR \($sc.state): #\($e.number) \($pr.title)\n\($pr.html_url)",
+                  embeds: [{
+                    author: {name: $user.login, url: ("https://github.com/" + $user.login), icon_url: $user.avatar_url},
+                    title:  "[\($repo)] PR \($sc.state): #\($e.number) \($pr.title)",
+                    url:    $pr.html_url,
+                    description: ($pr.body | trunc),
+                    color:  $sc.color
+                  }]
+                }
+            ' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$WEBHOOK"
