@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>WOPI_Host</RootNamespace>
+    <RootNamespace>WopiHost</RootNamespace>
+    <UserSecretsId>3855f6f8-dfbf-4b72-a950-1c63b998ec36</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

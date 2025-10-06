@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("3855f6f8-dfbf-4b72-a950-1c63b998ec36")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("WopiHost")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7106329c5fc8be0b9084091d055d869493609f9e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2959fcfd30c53c6864f09b3d604d6d63acb1fe36")]
 [assembly: System.Reflection.AssemblyProductAttribute("WopiHost")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WopiHost")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
