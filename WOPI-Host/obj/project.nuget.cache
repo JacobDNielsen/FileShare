@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "ge9d3r22iYs=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Holte\\Documents\\FileShare\\WOPI-Host\\WOPI-Host.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Holte\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.9\\microsoft.aspnetcore.openapi.9.0.9.nupkg.sha512",
+    "C:\\Users\\Holte\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
