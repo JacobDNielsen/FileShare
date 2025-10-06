@@ -7,7 +7,7 @@ namespace WopiHost.Models
         public string FileName { get; set; } = string.Empty;
         public long Size { get; set; } //burde mappe til bigint i db
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset LastModifiedAt { get; set; }
+        public DateTimeOffset LastModifiedAt { get; set; } = DateTimeOffset.UtcNow;
 
 
     }
