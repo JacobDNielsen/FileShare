@@ -1,0 +1,6 @@
+@WOPI_Host_HostAddress = http://localhost:5018
+
+GET {{WOPI_Host_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
