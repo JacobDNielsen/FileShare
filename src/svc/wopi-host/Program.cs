@@ -1,4 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using WopiHost.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
+builder.Services.AddDbContext<WopiDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 
