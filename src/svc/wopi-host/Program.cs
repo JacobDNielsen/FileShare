@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WopiHost.Data;
+using WopiHost.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -9,6 +10,7 @@ builder.Services.AddDbContext<WopiDbContext>(options =>
 
 // Add services to the container.
 
+builder.Services.AddScoped<FileService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
