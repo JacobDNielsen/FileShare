@@ -34,10 +34,10 @@ public class FileService
 
     public async Task<FileMetadata> UploadAsync(IFormFile file, CancellationToken ct)
     {
-        if (file.Length == 0)
-        {
-            throw new ArgumentException("File is empty", nameof(file));
-        }
+        // if (file.Length == 0)
+        // {
+        //     throw new ArgumentException("File is empty", nameof(file));
+        // }
 
         var metadata = new FileMetadata
         {
