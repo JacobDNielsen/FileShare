@@ -57,5 +57,79 @@ public class FileController : ControllerBase
 
         return File(stream, "application/octet-stream", fileName);
     }
-    
+
+    [HttpDelete("{fileId}")]
+    public async Task<IActionResult> Delete(string fileId, CancellationToken ct)
+    {
+        try
+        {
+            await _fileService.DeleteFileAsync(fileId, ct);
+            return Ok(new
+            {
+                message = "File deleted successfully",
+                fileId
+            });
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound(new
+            {
+                message = $"File with ID '{fileId}' was not found.",
+                fileId
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message,
+                fileId
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                message = "An unexpected error occurred while deleting the file.",
+                details = ex.Message,
+                fileId
+            });
+        }
+    }
+
+    [HttpDelete("wopi/files")]
+    public async Task<IActionResult> DeleteAll(CancellationToken ct)
+    {
+        var names = await _fileService.DeleteAllFilesAsync(ct);
+        return Ok(new { message = "Files deleted", count = names.Count, deletedNames = names });
+    }
+
+
+
+    [HttpPost("{fileId}/rename")]
+    public async Task<IActionResult> Rename(string fileId, [FromBody] RenameRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var updated = await _fileService.RenameFileAsync(fileId, request.Name, ct);
+            if (updated == null)
+                return NotFound(new { message = $"File with ID '{fileId}' not found." });
+
+            return Ok(new
+            {
+                message = "File renamed successfully",
+                fileId = updated.FileId,
+                newName = updated.FileName
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message, fileId });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Unexpected error while renaming file.", details = ex.Message, fileId });
+        }
+    }
+       
 }
