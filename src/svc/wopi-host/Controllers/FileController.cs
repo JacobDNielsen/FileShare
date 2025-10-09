@@ -97,6 +97,15 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpDelete("wopi/files")]
+    public async Task<IActionResult> DeleteAll(CancellationToken ct)
+    {
+        var names = await _fileService.DeleteAllFilesAsync(ct);
+        return Ok(new { message = "Files deleted", count = names.Count, deletedNames = names });
+    }
+
+
+
     [HttpPost("{fileId}/rename")]
     public async Task<IActionResult> Rename(string fileId, [FromBody] RenameRequest request, CancellationToken ct)
     {

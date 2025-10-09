@@ -16,7 +16,7 @@ public class FileService
         _dbContext = dbContext;
         var storageRoot = Path.Combine(Directory.GetCurrentDirectory(), "Data");
         _storagePath = Path.Combine(storageRoot, "Files");
-        
+
         Directory.CreateDirectory(_storagePath);
     }
 
@@ -103,6 +103,33 @@ public class FileService
         _dbContext.Files.Remove(entity);
         await _dbContext.SaveChangesAsync(ct);
     }
+
+    public async Task<List<string>> DeleteAllFilesAsync(CancellationToken ct)
+    {
+        var deletedNames = await _dbContext.Files
+            .Select(f => f.FileName)
+            .ToListAsync(ct);
+
+        // vi håndtere ikke errors endnu...
+        // sletter filer fra disken/serveren
+        if (Directory.Exists(_storagePath))
+        {
+            foreach (var path in Directory.EnumerateFiles(_storagePath, "*.bin"))
+            {
+                try { File.Delete(path); } catch { /* ignore */ }
+            }
+        }
+
+        // 3) sletter DB rows
+        await _dbContext.Files.ExecuteDeleteAsync(ct);
+
+        // 4) Hand back the names that were in the DB
+        return deletedNames;
+    }
+
+
+
+
 
     public async Task<FileMetadata?> RenameFileAsync(string fileId, string newName, CancellationToken ct)
     {
