@@ -107,6 +107,7 @@ public class FileService
     public async Task<List<string>> DeleteAllFilesAsync(CancellationToken ct)
     {
         var deletedNames = await _dbContext.Files
+            .AsNoTracking()
             .Select(f => f.FileName)
             .ToListAsync(ct);
 
