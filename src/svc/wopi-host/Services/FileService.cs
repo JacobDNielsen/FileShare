@@ -30,7 +30,7 @@ public class FileService
         return await _dbContext.Files.AsNoTracking().ToListAsync(ct);
     }
 
-    public async Task<FileMetadata?> GetFileMetadataAsync(string fileId, CancellationToken ct)
+    public async Task<FileMetadata?> CheckFileInfoAsync(string fileId, CancellationToken ct)
     {
         return await _dbContext.Files.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId, ct);
     }
@@ -65,7 +65,7 @@ public class FileService
 
     public async Task<(Stream? Stream, string? FileName)> GetFileAsync(string fileId, CancellationToken ct)
     {
-        var metadata = await GetFileMetadataAsync(fileId, ct);
+        var metadata = await CheckFileInfoAsync(fileId, ct);
         if (metadata == null)
         {
             return (null, null);

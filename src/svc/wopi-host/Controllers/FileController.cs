@@ -26,7 +26,7 @@ public class FileController : ControllerBase
     [HttpGet("{fileId}")]
     public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
     {
-        var metadata = await _fileService.GetFileMetadataAsync(fileId, ct);
+        var metadata = await _fileService.CheckFileInfoAsync(fileId, ct);
         if (metadata == null)
         {
             return NotFound();
@@ -43,7 +43,7 @@ public class FileController : ControllerBase
         }
 
         var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
-        return CreatedAtAction(nameof(GetFileMetadata), new { fileId = metadata.FileId }, metadata);
+        return CreatedAtAction(nameof(CheckFileInfo), new { fileId = metadata.FileId }, metadata);
     }
 
     [HttpGet("{fileId}/download")]
