@@ -24,7 +24,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet("{fileId}")]
-    public async Task<IActionResult> GetFileMetadata([FromRoute] string fileId, CancellationToken ct)
+    public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
     {
         var metadata = await _fileService.GetFileMetadataAsync(fileId, ct);
         if (metadata == null)
