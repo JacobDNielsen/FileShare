@@ -3,6 +3,7 @@ using WopiHost.Services;
 using WopiHost.Models;
 using WopiHost.Dto;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace WopiHost.Controllers;
 
@@ -57,7 +58,7 @@ public sealed class AuthenticationController : ControllerBase
         return Ok(new
         {
             message = $"Hello, {userName}. This is your profile.",
-            sub = User.FindFirst("sub")?.Value,
+            sub = User.FindFirstValue(ClaimTypes.NameIdentifier),
             name = User.Identity?.Name
         });
     }
