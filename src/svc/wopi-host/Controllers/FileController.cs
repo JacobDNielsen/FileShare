@@ -37,9 +37,9 @@ public class FileController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, CancellationToken ct)
     {
-        if (fileRequest == null || fileRequest.File == null || fileRequest.File.Length == 0)
+        if (fileRequest == null || fileRequest.File == null)
         {
-            return BadRequest("No file in request or file is empty :')");
+            return BadRequest("No file in request :')");
         }
 
         var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
