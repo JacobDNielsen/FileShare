@@ -119,7 +119,7 @@ public class FileController : ControllerBase
             {
                 message = "File renamed successfully",
                 fileId = updated.FileId,
-                newName = updated.FileName
+                newName = updated.BaseFileName
             });
         }
         catch (InvalidOperationException ex)
