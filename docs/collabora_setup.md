@@ -32,7 +32,7 @@ docker run -d --rm `
 ```
 - **Explanation of the above configs:**
   - `-d:`
-  -         *Purpose:* Runs the docker image in detached mode
+  -         *Purpose:* Runs the docker image in detached mode. This starts the container in the background (runs independently of terminal session) and prints just the container ID.
   - `--rm:`
   -         *Purpose:* Deletes the docker image after it is shutdown.
   - `-p:`
