@@ -45,7 +45,7 @@ public class WopiDbContext : DbContext
             e.ToTable("useraccounts");
             e.HasKey(ua => ua.Id);
             e.Property(ua => ua.UserName).HasMaxLength(64).IsRequired();
-            e.Property(ua => ua.PasswordHash).HasMaxLength(256).IsRequired(); //currently plain text, but should be hashed
+            e.Property(ua => ua.PasswordHash).HasMaxLength(512).IsRequired(); //currently plain text, but should be hashed
             e.Property(ua => ua.Email).HasMaxLength(256).IsRequired();
 
             e.HasIndex(ua => ua.UserName).IsUnique();
