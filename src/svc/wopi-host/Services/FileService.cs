@@ -2,7 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using WopiHost.Data;
 using WopiHost.Models;
 using Microsoft.AspNetCore.Http;
-using WopiHost.dto;
+using WopiHost.Dto;
+using WopiHost.Common;
 
 namespace WopiHost.Services;
 
@@ -129,9 +130,6 @@ public class FileService
     }
 
 
-
-
-
     public async Task<FileMetadata?> RenameFileAsync(string fileId, string newName, CancellationToken ct)
     {
         var entity = await _dbContext.Files.FirstOrDefaultAsync(f => f.FileId == fileId, ct);
@@ -155,5 +153,23 @@ public class FileService
         }
 
         return entity;
+    }
+
+
+    public async Task<PagedResult<FileListItem>> GetFilesPagedAsync(
+        PageQuery q,
+        CancellationToken ct)
+    {
+        var baseQuery = _dbContext.Files.AsNoTracking();
+
+        //kalder på vores hjælpemetode fra baseQuery. Kan gøres på denne måde fordi vores hjælper er en extension method. C# magic 
+        return await baseQuery.ToPagedResultAsync<FileMetadata, FileListItem>(
+            q,
+            orderBy: qy => qy
+                .OrderByDescending(f => f.LastModifiedAt)
+                .ThenBy(f => f.FileId),
+            selector: f => new FileListItem(f.FileId, f.FileName, f.Size, f.LastModifiedAt),
+            ct: ct
+        );
     }
 }
