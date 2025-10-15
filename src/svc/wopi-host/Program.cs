@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
 using WopiHost.Data;
 using WopiHost.Models;
 using WopiHost.Services;
@@ -79,6 +80,8 @@ builder.Services.AddSwaggerGen(s =>
         }
     });
 });
+
+builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 
 builder.Services.AddAuthorization();
 // Add services to the container.
