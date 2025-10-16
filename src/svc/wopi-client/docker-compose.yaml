@@ -5,7 +5,8 @@ services:
     ports:
       - "9980:9980"
     environment:
-      - aliasgroup1=http://host.docker.internal:5108
+      - domain=host\\.docker\\.internal
+      - aliasgroup1=http://host.docker.internal:5018
       - extra_params=--o:ssl.enable=false
       - username=admin
       - password=123!
