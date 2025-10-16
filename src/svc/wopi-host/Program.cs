@@ -11,7 +11,11 @@ builder.Services.AddDbContext<WopiDbContext>(options =>
 // Add services to the container.
 
 builder.Services.AddScoped<FileService>();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; //sørger for at vi skriver i Pascal-case til wopi client
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

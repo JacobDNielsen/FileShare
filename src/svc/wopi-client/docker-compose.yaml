@@ -1,0 +1,13 @@
+services:
+  collabora:
+    image: collabora/code:latest
+    container_name: collabora
+    ports:
+      - "9980:9980"
+    environment:
+      - domain=host\\.docker\\.internal
+      - aliasgroup1=http://host.docker.internal:5018
+      - extra_params=--o:ssl.enable=false
+      - username=admin
+      - password=123!
+    restart: unless-stopped
