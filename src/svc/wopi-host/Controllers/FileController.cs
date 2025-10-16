@@ -157,5 +157,12 @@ public class FileController : ControllerBase
             return StatusCode(500, new { message = "Unexpected error while renaming file.", details = ex.Message, fileId });
         }
     }
+
+    [HttpGet("{fileId}/urlBuilder")]
+    public async Task<IActionResult> UrlBuilder([FromRoute] string fileId, CancellationToken ct)
+    {
+        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
+        return Ok(url);
+    }
        
 }
