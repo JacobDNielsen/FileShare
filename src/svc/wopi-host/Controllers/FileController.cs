@@ -23,6 +23,21 @@ public class FileController : ControllerBase
         return Ok(files);
     }
 
+    [HttpGet("{fileId}/contents")]
+    public async Task<IActionResult> GetFile([FromRoute] string fileId, CancellationToken ct)
+    {
+
+        //Vi burde tilføje access token til dette senere
+        var (stream, fileName) = await _fileService.GetFileAsync(fileId, ct);
+        if (stream == null)
+        {
+            return NotFound();
+        }
+
+        return File(stream, "application/octet-stream", fileName); // application/octet-stream er til at omsætte stream til bytes
+        
+    }
+
     [HttpGet("{fileId}")]
     public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
     {
