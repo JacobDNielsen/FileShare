@@ -31,7 +31,18 @@ public class FileController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(metadata);
+
+        var response = new CheckFileInfoResponse
+        {
+            BaseFileName = metadata.BaseFileName,
+            Size = metadata.Size,
+            OwnerId = "user", // Adjust as needed
+            UserId = "user",
+            Version = metadata.LastModifiedAt.Ticks.ToString(),
+            UserCanWrite = true
+        };
+        
+        return Ok(response);
     }
 
     [HttpPost("upload")]
