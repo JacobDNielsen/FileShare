@@ -24,6 +24,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
