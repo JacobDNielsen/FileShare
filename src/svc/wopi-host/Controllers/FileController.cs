@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WopiHost.Services;
 using WopiHost.Models;
-using WopiHost.dto;
+using WopiHost.Dto;
 
 namespace WopiHost.Controllers;
 
@@ -97,7 +97,7 @@ public class FileController : ControllerBase
         }
     }
 
-    [HttpDelete("wopi/files")]
+    [HttpDelete("all")]
     public async Task<IActionResult> DeleteAll(CancellationToken ct)
     {
         var names = await _fileService.DeleteAllFilesAsync(ct);
@@ -131,5 +131,14 @@ public class FileController : ControllerBase
             return StatusCode(500, new { message = "Unexpected error while renaming file.", details = ex.Message, fileId });
         }
     }
-       
+
+    [HttpGet("paged")]
+       public async Task<ActionResult<PagedResult<FileListItem>>> List(
+        [FromQuery] PageQuery q,
+        CancellationToken ct)
+    {
+        var result = await _fileService.GetFilesPagedAsync(q, ct);
+
+        return Ok(result);
+    }
 }
