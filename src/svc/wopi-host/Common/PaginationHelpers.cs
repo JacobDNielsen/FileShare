@@ -11,7 +11,7 @@ public static class PaginationExtensions
 
     public static async Task<PagedResult<TDto>> ToPagedResultAsync<TEntity, TDto>(
         this IQueryable<TEntity> source, //specificerer at det er en helper med 'this'
-        PageQuery q,
+        PageQuery q, //pagesize og page
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy, //modtager entitet, retunerer sorteret entitet
         Expression<Func<TEntity, TDto>> selector, //mapper entiteten til DTO
         CancellationToken ct = default)
