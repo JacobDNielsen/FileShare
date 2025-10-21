@@ -164,7 +164,7 @@ public class FileService
             orderBy: qy => qy
                 .OrderByDescending(f => f.LastModifiedAt)
                 .ThenBy(f => f.FileId),
-            selector: f => new FileListItem(f.FileId, f.FileName, f.Size, f.LastModifiedAt),
+            selector: f => new FileListItem(f.FileId, f.BaseFileName, f.Size, f.LastModifiedAt),
             ct: ct
         );
     }

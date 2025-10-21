@@ -137,7 +137,7 @@ public class FileController : ControllerBase
     {
         try
         {
-            var updated = await _fileService.RenameFileAsync(fileId, request.Name, ct);
+            var updated = await _fileService.RenameFileAsync(fileId, request.BaseFileName, ct);
             if (updated == null)
                 return NotFound(new { message = $"File with ID '{fileId}' not found." });
 

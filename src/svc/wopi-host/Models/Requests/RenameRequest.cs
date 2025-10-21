@@ -1,4 +1,4 @@
 public class RenameRequest
 {
-    public string Name { get; set; } = string.Empty;
+    public string BaseFileName { get; set; } = null!;
 }
