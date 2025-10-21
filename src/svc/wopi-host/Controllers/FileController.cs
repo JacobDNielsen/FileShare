@@ -23,15 +23,41 @@ public class FileController : ControllerBase
         return Ok(files);
     }
 
-    [HttpGet("{fileId}")]
-    public async Task<IActionResult> GetFileMetadata([FromRoute] string fileId, CancellationToken ct)
+    [HttpGet("{fileId}/contents")]
+    public async Task<IActionResult> GetFile([FromRoute] string fileId, CancellationToken ct)
     {
-        var metadata = await _fileService.GetFileMetadataAsync(fileId, ct);
+
+        //Vi burde tilføje access token til dette senere
+        var (stream, fileName) = await _fileService.GetFileAsync(fileId, ct);
+        if (stream == null)
+        {
+            return NotFound();
+        }
+
+        return File(stream, "application/octet-stream", fileName); // application/octet-stream er til at omsætte stream til bytes
+        
+    }
+
+    [HttpGet("{fileId}")]
+    public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
+    {
+        var metadata = await _fileService.CheckFileInfoAsync(fileId, ct);
         if (metadata == null)
         {
             return NotFound();
         }
-        return Ok(metadata);
+
+        var response = new CheckFileInfoResponse
+        {
+            BaseFileName = metadata.BaseFileName,
+            Size = metadata.Size,
+            OwnerId = "user", // Adjust as needed
+            UserId = "user",
+            Version = metadata.LastModifiedAt.Ticks.ToString(),
+            UserCanWrite = true
+        };
+        
+        return Ok(response);
     }
 
     [HttpPost("upload")]
@@ -43,7 +69,7 @@ public class FileController : ControllerBase
         }
 
         var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
-        return CreatedAtAction(nameof(GetFileMetadata), new { fileId = metadata.FileId }, metadata);
+        return CreatedAtAction(nameof(CheckFileInfo), new { fileId = metadata.FileId }, metadata);
     }
 
     [HttpGet("{fileId}/download")]
@@ -119,7 +145,7 @@ public class FileController : ControllerBase
             {
                 message = "File renamed successfully",
                 fileId = updated.FileId,
-                newName = updated.FileName
+                newName = updated.BaseFileName
             });
         }
         catch (InvalidOperationException ex)
@@ -132,6 +158,13 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpGet("{fileId}/urlBuilder")]
+    public async Task<IActionResult> UrlBuilder([FromRoute] string fileId, CancellationToken ct)
+    {
+        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
+        return Ok(url);
+    }
+       
     [HttpGet("paged")]
        public async Task<ActionResult<PagedResult<FileListItem>>> List(
         [FromQuery] PageQuery q,

@@ -31,7 +31,7 @@ public class FileService
         return await _dbContext.Files.AsNoTracking().ToListAsync(ct);
     }
 
-    public async Task<FileMetadata?> GetFileMetadataAsync(string fileId, CancellationToken ct)
+    public async Task<FileMetadata?> CheckFileInfoAsync(string fileId, CancellationToken ct)
     {
         return await _dbContext.Files.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId, ct);
     }
@@ -41,7 +41,7 @@ public class FileService
 
         var metadata = new FileMetadata
         {
-            FileName = file.FileName,
+            BaseFileName = file.FileName,
             Size = file.Length,
             CreatedAt = DateTimeOffset.UtcNow,
             LastModifiedAt = DateTimeOffset.UtcNow
@@ -62,7 +62,7 @@ public class FileService
 
     public async Task<(Stream? Stream, string? FileName)> GetFileAsync(string fileId, CancellationToken ct)
     {
-        var metadata = await GetFileMetadataAsync(fileId, ct);
+        var metadata = await CheckFileInfoAsync(fileId, ct);
         if (metadata == null)
         {
             return (null, null);
@@ -75,7 +75,7 @@ public class FileService
         }
 
         var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return (stream, metadata.FileName);
+        return (stream, metadata.BaseFileName);
     }
 
     public async Task DeleteFileAsync(string fileId, CancellationToken ct)
@@ -105,7 +105,7 @@ public class FileService
     {
         var deletedNames = await _dbContext.Files
             .AsNoTracking()
-            .Select(f => f.FileName)
+            .Select(f => f.BaseFileName)
             .ToListAsync(ct);
 
         // vi håndtere ikke errors endnu...
@@ -138,7 +138,7 @@ public class FileService
         try
         {
             //opdater navn i databasen kun...
-            entity.FileName = newName;
+            entity.BaseFileName = newName;
             entity.LastModifiedAt = DateTimeOffset.UtcNow;
 
             await _dbContext.SaveChangesAsync(ct);
