@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WopiHost.Services;
 using WopiHost.Models;
-using WopiHost.dto;
+using WopiHost.Dto;
 
 namespace WopiHost.Controllers;
 
@@ -63,9 +63,9 @@ public class FileController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, CancellationToken ct)
     {
-        if (fileRequest == null || fileRequest.File == null || fileRequest.File.Length == 0)
+        if (fileRequest == null || fileRequest.File == null)
         {
-            return BadRequest("No file in request or file is empty :')");
+            return BadRequest("No file in request :')");
         }
 
         var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
@@ -123,7 +123,7 @@ public class FileController : ControllerBase
         }
     }
 
-    [HttpDelete("wopi/files")]
+    [HttpDelete("all")]
     public async Task<IActionResult> DeleteAll(CancellationToken ct)
     {
         var names = await _fileService.DeleteAllFilesAsync(ct);
@@ -165,4 +165,13 @@ public class FileController : ControllerBase
         return Ok(url);
     }
        
+    [HttpGet("paged")]
+       public async Task<ActionResult<PagedResult<FileListItem>>> List(
+        [FromQuery] PageQuery q,
+        CancellationToken ct)
+    {
+        var result = await _fileService.GetFilesPagedAsync(q, ct);
+
+        return Ok(result);
+    }
 }
