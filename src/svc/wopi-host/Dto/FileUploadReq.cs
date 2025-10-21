@@ -1,4 +1,4 @@
-namespace WopiHost.dto
+namespace WopiHost.Dto
 {
     public class FileUploadReq
     {

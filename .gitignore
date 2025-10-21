@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/src/svc/wopi-host/Data/Files
+/src/svc/wopi-host/Data/Migrations
+
+# VS Code local settings
+.vscode/
