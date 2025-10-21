@@ -1,6 +1,6 @@
 public class CheckFileInfoResponse
 {
-    public string BaseFileName { get; set; } = string.Empty;
+    public string BaseFileName { get; set; } = null!;
     public long Size { get; set; }
     public string OwnerId { get; set; } = "user";
     public string UserId { get; set; } = "user";
