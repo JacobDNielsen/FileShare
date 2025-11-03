@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WopiHost</RootNamespace>
     
-    <UserSecretsId>88e07eb8-1c06-4167-9cdb-e52e5658e5cb</UserSecretsId>
+    <UserSecretsId>9576b022-254b-4cab-baf5-ec040b583ce5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
