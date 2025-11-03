@@ -1,4 +1,4 @@
-namespace WopiHost.Models
+namespace User.Models
 {
     public class UserAccount
     {

@@ -1,4 +1,4 @@
-namespace WopiHost.Services;
+namespace User.Services;
 
 public interface IJwtService
 {

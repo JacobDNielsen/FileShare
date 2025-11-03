@@ -1,27 +1,25 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using WopiHost.Data;
-using WopiHost.Dto;
-using WopiHost.Models;
 
-namespace WopiHost.Services;
+using Microsoft.AspNetCore.Identity;
+using User.Dto;
+using User.Models;
+
+namespace User.Services;
 
 public class UserService : IUserService
 {
-    private readonly WopiDbContext _dbContext;
+    //private readonly WopiDbContext _dbContext;
     private readonly IJwtService _jwtService;
     private readonly IPasswordHasher<UserAccount> _passwordHasher;
 
-    public UserService(WopiDbContext dbContext, IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
+    public UserService( IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
     {
-        _dbContext = dbContext;
         _jwtService = jwtService;
         _passwordHasher = passwordHasher;
 
     }
 
     public async Task<AuthResp> SignupAsync(SignupReq req, CancellationToken ct)
-    {
+    {/*
         if (string.IsNullOrWhiteSpace(req.UserName) ||
             string.IsNullOrWhiteSpace(req.Email) ||
             string.IsNullOrWhiteSpace(req.Password))
@@ -51,12 +49,13 @@ public class UserService : IUserService
         _dbContext.UserAccounts.Add(user);
         await _dbContext.SaveChangesAsync(ct);
 
-        var token = _jwtService.JwtTokenGenerator(user.Id.ToString(), user.UserName);
-        return new AuthResp(user.UserName, "Bearer", token);
+        var token = _jwtService.JwtTokenGenerator(user.Id.ToString(), user.UserName); 
+        return new AuthResp(user.UserName, "Bearer", token); */
+        throw new NotImplementedException();
     }
 
     public async Task<AuthResp?> LoginAsync(LoginReq req, CancellationToken ct)
-    {
+    {/*
         var userName = req.UserName.Trim().ToLowerInvariant();
         var password = req.Password;
 
@@ -84,6 +83,8 @@ public class UserService : IUserService
 
         var token = _jwtService.JwtTokenGenerator(user.Id.ToString(), user.UserName);
         return new AuthResp(user.UserName, "Bearer", token);
+    */
+        throw new NotImplementedException();
     }
 
 }
