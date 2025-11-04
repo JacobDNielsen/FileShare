@@ -1,5 +1,5 @@
 using User.Dto;
-namespace User.Services;
+namespace User.Interfaces;
 
 public interface IUserService
 {

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using User.Services;
+using User.Interfaces;
 using User.Models;
 using User.Dto;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
-namespace WopiHost.Controllers;
+namespace User.Controllers;
 
 [ApiController]
 [Route("authentication")]
