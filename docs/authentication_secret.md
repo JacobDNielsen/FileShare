@@ -1,6 +1,11 @@
 # Initializing JWT secret
 
+Ensure that there is existing UserSecret, if not run: dotnet user-secrets init 
 To initialize the value for JWT secret, the developer must write the following in terminal:
-dotnet user-secrets set "Authentication:Jwt:Secret" "Freight-Stir-Uneatable-Germproof4-Crust-Number-Simplify-Unbaked-Swimmable"
+openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+- This generates PK used for RSA, stored in current dir as "private.pem". PK is generated with length of 2048 bits  
 
-Note that min length for user secret is defined in builder.Services.AddOptions, in Program.cs. 
+Afterwards run command: dotnet user-secrets set "Authentication:Jwt:PrivateKeyPem" "$(cat private.pem)"
+- This appends the PK to the user-secrets.
+
+!! Afterwards delete private.pem file, generated in root of User folder !!
