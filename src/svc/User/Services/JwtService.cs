@@ -3,9 +3,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
-using WopiHost.Models;
+using User.Models;
 
-namespace WopiHost.Services;
+namespace User.Services;
 
 public sealed class JwtService : IJwtService
 {

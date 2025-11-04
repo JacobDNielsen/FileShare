@@ -1,0 +1,20 @@
+Phishing and social engineering
+How to prevent the attacks?
+Two-factor, email spam filters, VPN,
+
+Social Engineering: art of getting users to compromise information systems.
+
+Phishing: An approach to capture users credentials. Include an URL in a mail etc...
+
+Spear-Phshing: A mail tailor made to a user making it seem legit, with information gathered about the user.
+
+
+Physical approaches: Actually gathering information in person. Eg dumpster searching...
+
+Social approaches:
+
+Reverse social engineering: Attacker sabotages a part of one's services, pretends to be a figure of assistance and ask for vital information to supposedly fix the problem.
+
+Technical approaches: find information via the internet: LinkedIn, FaceBook, Instagram etc. web scraping
+
+Socio-technical approaches: Combination of all approaches. eg baiting attack with road apples or spear-phishing.

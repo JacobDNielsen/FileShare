@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using WopiHost.Services;
-using WopiHost.Models;
-using WopiHost.Dto;
+using User.Services;
+using User.Models;
+using User.Dto;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 

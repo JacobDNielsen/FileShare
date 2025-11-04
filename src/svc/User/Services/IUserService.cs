@@ -1,5 +1,5 @@
-using WopiHost.Dto;
-namespace WopiHost.Services;
+using User.Dto;
+namespace User.Services;
 
 public interface IUserService
 {
