@@ -487,3 +487,7 @@ $RECYCLE.BIN/
 
 # VS Code local settings
 .vscode/
+
+# Signing key (PK)
+private.pem
+*.pem
