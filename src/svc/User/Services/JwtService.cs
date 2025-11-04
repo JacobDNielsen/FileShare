@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using User.Models;
+using User.Interfaces;
 
 namespace User.Services;
 

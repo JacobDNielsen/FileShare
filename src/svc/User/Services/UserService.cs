@@ -2,24 +2,26 @@
 using Microsoft.AspNetCore.Identity;
 using User.Dto;
 using User.Models;
+using User.Interfaces;
 
 namespace User.Services;
 
 public class UserService : IUserService
 {
-    //private readonly WopiDbContext _dbContext;
+    private readonly IUserRepository _repository;
     private readonly IJwtService _jwtService;
     private readonly IPasswordHasher<UserAccount> _passwordHasher;
 
-    public UserService( IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
+    public UserService(IUserRepository repository, IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
     {
+        _repository = repository;
         _jwtService = jwtService;
         _passwordHasher = passwordHasher;
 
     }
 
     public async Task<AuthResp> SignupAsync(SignupReq req, CancellationToken ct)
-    {/*
+    {
         if (string.IsNullOrWhiteSpace(req.UserName) ||
             string.IsNullOrWhiteSpace(req.Email) ||
             string.IsNullOrWhiteSpace(req.Password))
@@ -30,11 +32,7 @@ public class UserService : IUserService
         var email = req.Email.Trim().ToLowerInvariant();
         var password = req.Password;
 
-        var doesUserExists = await _dbContext.UserAccounts
-        .AsNoTracking()
-        .AnyAsync(u => u.UserName == userName || u.Email == email, ct);
-
-        if (doesUserExists)
+        if (await _repository.ExistsByUsernameOrEmailAsync(userName, email, ct))
         {
             throw new InvalidOperationException("User with that username or email already exists");
         }
@@ -46,27 +44,22 @@ public class UserService : IUserService
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, password);
-        _dbContext.UserAccounts.Add(user);
-        await _dbContext.SaveChangesAsync(ct);
+        await _repository.AddUserAsync(user, ct);
 
         var token = _jwtService.JwtTokenGenerator(user.Id.ToString(), user.UserName); 
-        return new AuthResp(user.UserName, "Bearer", token); */
-        throw new NotImplementedException();
+        return new AuthResp(user.UserName, "Bearer", token);
     }
 
     public async Task<AuthResp?> LoginAsync(LoginReq req, CancellationToken ct)
-    {/*
+    {
         var userName = req.UserName.Trim().ToLowerInvariant();
         var password = req.Password;
 
-        var user = await _dbContext.UserAccounts
-            .FirstOrDefaultAsync(u => u.UserName == userName, ct);
-
+        var user = await _repository.GetUserByUsernameAsync(userName, ct);
         if (user == null)
         {
             return null;
         }
-
         var isCorrectHash = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (isCorrectHash == PasswordVerificationResult.Failed)
         {
@@ -79,12 +72,10 @@ public class UserService : IUserService
         }
 
         user.LastLoginAt = DateTimeOffset.UtcNow;
-        await _dbContext.SaveChangesAsync(ct);
+        await _repository.UpdateUserAsync(user, ct);
 
         var token = _jwtService.JwtTokenGenerator(user.Id.ToString(), user.UserName);
         return new AuthResp(user.UserName, "Bearer", token);
-    */
-        throw new NotImplementedException();
     }
 
 }
