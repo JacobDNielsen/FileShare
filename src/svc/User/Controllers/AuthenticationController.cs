@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using User.Interfaces;
-using User.Models;
 using User.Dto;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+
 
 namespace User.Controllers;
 
@@ -19,7 +17,6 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("signup")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResp), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Signup([FromBody] SignupReq req, CancellationToken ct)
@@ -36,7 +33,6 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResp), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginReq req, CancellationToken ct)
@@ -47,19 +43,5 @@ public sealed class AuthenticationController : ControllerBase
             return Unauthorized(new { message = "Invalid username or password" });
         }
         return Ok(authResponse);
-    }
-
-    [HttpGet("profile")]
-    [Authorize]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-    public IActionResult Profile()
-    {
-        var userName = User.Identity?.Name ?? "Unknown";
-        return Ok(new
-        {
-            message = $"Hello, {userName}. This is your profile.",
-            sub = User.FindFirstValue(ClaimTypes.NameIdentifier),
-            name = User.Identity?.Name
-        });
     }
 }
