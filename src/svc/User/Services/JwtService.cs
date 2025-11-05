@@ -13,11 +13,10 @@ public sealed class JwtService : IJwtService
     private readonly JwtConfig _config;
     private readonly SigningCredentials _signingCreds;
 
-    public JwtService(IOptions<JwtConfig> options)
+    public JwtService(IOptions<JwtConfig> options, JwtSigningKeyStore keyStore)
     {
         _config = options.Value;
-        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.Secret));
-        _signingCreds = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+        _signingCreds = keyStore.GetLatestSigningCredentials();
     }
 
     public string JwtTokenGenerator(string userId, string userName)
