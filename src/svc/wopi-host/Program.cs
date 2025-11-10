@@ -75,7 +75,15 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
+
+// Register the typed HttpClient for communicating with the Storage microservice
+builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
+{
+    // Base URL of your Storage service (set in appsettings.json or environment variable)
+    client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 
