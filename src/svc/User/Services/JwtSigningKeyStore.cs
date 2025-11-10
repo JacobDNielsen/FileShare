@@ -57,6 +57,7 @@ public sealed class JwtSigningKeyStore
                 N = Base64UrlEncoder.Encode(publicParameter.Modulus!),
                 Alg = SecurityAlgorithms.RsaSha256
             };
+        }
 
             if (!_signingKeys.ContainsKey(config.LatestKeyId))
             {
@@ -65,7 +66,7 @@ public sealed class JwtSigningKeyStore
 
             LatestKeyId = config.LatestKeyId;
         }
-    }
+    
 
     public SigningCredentials GetLatestSigningCredentials()
     {
