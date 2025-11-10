@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WopiHost.Services;
 using WopiHost.Models;
 using WopiHost.Dto;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WopiHost.Controllers;
 
@@ -17,6 +18,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAllFilesMetadata(CancellationToken ct)
     {
         var files = await _fileService.GetAllFilesMetadataAsync(ct);
