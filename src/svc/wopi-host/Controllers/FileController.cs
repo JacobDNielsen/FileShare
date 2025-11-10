@@ -1,177 +1,110 @@
 using Microsoft.AspNetCore.Mvc;
-using WopiHost.Services;
-using WopiHost.Models;
-using WopiHost.Dto;
+using Storage.Services;
+using Storage.Dto;
 
 namespace WopiHost.Controllers;
 
 [ApiController]
 [Route("wopi/files")]
-public class FileController : ControllerBase
+public sealed class WopiFilesController : ControllerBase
 {
-    private readonly FileService _fileService;
+    private readonly IFileService _files;
 
-    public FileController(FileService fileService)
+    public WopiFilesController(IFileService files) => _files = files;
+
+    // GET /wopi/files/{id}  (CheckFileInfo)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> CheckFileInfo(string id, CancellationToken ct)
     {
-        _fileService = fileService;
-    }
+        // TODO: validate access_token & proof keys per WOPI before proceeding.
+        var meta = await _files.CheckFileInfoAsync(id, ct);
+        if (meta is null) return NotFound();
 
-    [HttpGet]
-    public async Task<IActionResult> GetAllFilesMetadata(CancellationToken ct)
-    {
-        var files = await _fileService.GetAllFilesMetadataAsync(ct);
-        return Ok(files);
-    }
-
-    [HttpGet("{fileId}/contents")]
-    public async Task<IActionResult> GetFile([FromRoute] string fileId, CancellationToken ct)
-    {
-
-        //Vi burde tilføje access token til dette senere
-        var (stream, fileName) = await _fileService.GetFileAsync(fileId, ct);
-        if (stream == null)
-        {
-            return NotFound();
-        }
-
-        return File(stream, "application/octet-stream", fileName); // application/octet-stream er til at omsætte stream til bytes
-        
-    }
-
-    [HttpGet("{fileId}")]
-    public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
-    {
-        var metadata = await _fileService.CheckFileInfoAsync(fileId, ct);
-        if (metadata == null)
-        {
-            return NotFound();
-        }
-
+        // Minimal WOPI JSON (extend as needed)
         var response = new CheckFileInfoResponse
         {
-            BaseFileName = metadata.BaseFileName,
-            Size = metadata.Size,
-            OwnerId = "user", // Adjust as needed
+            BaseFileName = meta.BaseFileName,
+            Size = meta.Size,
+            OwnerId = "user",
             UserId = "user",
-            Version = metadata.LastModifiedAt.Ticks.ToString(),
+            Version = meta.LastModifiedAt.Ticks.ToString(),
             UserCanWrite = true
         };
-        
+
         return Ok(response);
     }
 
-    [HttpPost("upload")]
-    public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, CancellationToken ct)
+    // GET /wopi/files/{id}/contents  (Download)
+    [HttpGet("{id}/contents")]
+    public async Task<IActionResult> GetFile(string id, CancellationToken ct)
     {
-        if (fileRequest == null || fileRequest.File == null)
-        {
-            return BadRequest("No file in request :')");
-        }
-
-        var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
-        return CreatedAtAction(nameof(CheckFileInfo), new { fileId = metadata.FileId }, metadata);
-    }
-
-    [HttpGet("{fileId}/download")]
-    public async Task<IActionResult> DownloadFile([FromRoute] string fileId, CancellationToken ct)
-    {
-        var (stream, fileName) = await _fileService.GetFileAsync(fileId, ct);
-        if (stream == null)
-        {
-            return NotFound("no file found with that id :')");
-        }
-
+        var (stream, fileName) = await _files.GetFileAsync(id, ct);
+        if (stream is null) return NotFound();
         return File(stream, "application/octet-stream", fileName);
     }
 
-    [HttpDelete("{fileId}")]
-    public async Task<IActionResult> Delete(string fileId, CancellationToken ct)
+    // POST /wopi/files/{id}/contents  with X-WOPI-Override: PUT  (Update file bytes)
+    [HttpPost("{id}/contents")]
+    public async Task<IActionResult> PutFile(string id, CancellationToken ct)
     {
-        try
-        {
-            await _fileService.DeleteFileAsync(fileId, ct);
-            return Ok(new
-            {
-                message = "File deleted successfully",
-                fileId
-            });
-        }
-        catch (FileNotFoundException)
-        {
-            return NotFound(new
-            {
-                message = $"File with ID '{fileId}' was not found.",
-                fileId
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new
-            {
-                message = ex.Message,
-                fileId
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new
-            {
-                message = "An unexpected error occurred while deleting the file.",
-                details = ex.Message,
-                fileId
-            });
-        }
+        var op = Request.Headers["X-WOPI-Override"].ToString();
+        if (!string.Equals(op, "PUT", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Expect X-WOPI-Override: PUT");
+
+        // TODO (next step): implement overwrite path in IFileService (e.g., OverwriteAsync(id, Request.Body, ct))
+        // Also validate X-WOPI-Lock vs your stored lock before writing; on mismatch return 409 and set X-WOPI-Lock header.
+        return StatusCode(501, "PUT not implemented yet. Add OverwriteAsync to IFileService and handle locks.");
     }
 
-    [HttpDelete("all")]
-    public async Task<IActionResult> DeleteAll(CancellationToken ct)
+    // POST /wopi/files/{id}  with X-WOPI-Override for LOCK/UNLOCK/REFRESH_LOCK/GET_LOCK/RENAME_FILE/PUT_RELATIVE/DELETE
+    [HttpPost("{id}")]
+    public async Task<IActionResult> FileOps(string id, CancellationToken ct)
     {
-        var names = await _fileService.DeleteAllFilesAsync(ct);
-        return Ok(new { message = "Files deleted", count = names.Count, deletedNames = names });
-    }
+        var op = Request.Headers["X-WOPI-Override"].ToString().ToUpperInvariant();
 
-
-
-    [HttpPost("{fileId}/rename")]
-    public async Task<IActionResult> Rename(string fileId, [FromBody] RenameRequest request, CancellationToken ct)
-    {
-        try
+        switch (op)
         {
-            var updated = await _fileService.RenameFileAsync(fileId, request.BaseFileName, ct);
-            if (updated == null)
-                return NotFound(new { message = $"File with ID '{fileId}' not found." });
-
-            return Ok(new
+            case "RENAME_FILE":
             {
-                message = "File renamed successfully",
-                fileId = updated.FileId,
-                newName = updated.BaseFileName
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message, fileId });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Unexpected error while renaming file.", details = ex.Message, fileId });
-        }
-    }
+                var requested = Request.Headers["X-WOPI-RequestedName"].ToString();
+                if (string.IsNullOrWhiteSpace(requested))
+                    return BadRequest("Missing X-WOPI-RequestedName");
 
-    [HttpGet("{fileId}/urlBuilder")]
-    public async Task<IActionResult> UrlBuilder([FromRoute] string fileId, CancellationToken ct)
-    {
-        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
-        return Ok(url);
-    }
-       
-    [HttpGet("paged")]
-       public async Task<ActionResult<PagedResult<FileListItem>>> List(
-        [FromQuery] PageQuery q,
-        CancellationToken ct)
-    {
-        var result = await _fileService.GetFilesPagedAsync(q, ct);
+                var updated = await _files.RenameFileAsync(id, requested, ct);
+                if (updated is null) return NotFound();
 
-        return Ok(result);
+                // WOPI expects { Name: "<final name>" }
+                return Ok(new { Name = updated.BaseFileName });
+            }
+
+            case "DELETE":
+            {
+                await _files.DeleteFileAsync(id, ct);
+                return Ok();
+            }
+
+            case "LOCK":
+            case "UNLOCK":
+            case "REFRESH_LOCK":
+            case "GET_LOCK":
+            {
+                // TODO: Implement your FileLocks table use here.
+                // - Validate/echo X-WOPI-Lock
+                // - On mismatch: return 409 and set Response.Headers["X-WOPI-Lock"] = "<current-lock>"
+                // - Refresh sets new expiry
+                // For now, stub success:
+                return Ok();
+            }
+
+            case "PUT_RELATIVE":
+            {
+                // TODO: Create sibling file based on X-WOPI-SuggestedTarget or X-WOPI-RelativeTarget
+                // Read Request.Body as bytes for the new file content.
+                return StatusCode(501, "PUT_RELATIVE not implemented yet.");
+            }
+
+            default:
+                return BadRequest("Unsupported X-WOPI-Override");
+        }
     }
 }

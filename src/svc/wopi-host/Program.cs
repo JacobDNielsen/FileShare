@@ -4,6 +4,146 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
+
+//
+using User.Services;
+using User.Models;
+// WOPI Host (auth/users) bits
+using WopiHost.Data;
+using WopiHost.Models;
+//using WopiHost.Services;
+
+// Storage (file repo/service) bits
+using Storage.Data;                 // Storage-side DbContext (for FileMetadata)
+using Storage.Repositories;         // IFileRepository, FileRepository
+using Storage.Services;             // IFileService, FileService (files domain)
+using Storage.FileStorage;          // IFileStorage, FileStorage (bytes)
+
+// ------------------------
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
+// --- DB Contexts ---
+// WOPI Host auth/users context (if you need it)
+builder.Services.AddDbContext<Storage.Data.WopiDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Storage context for FileMetadata (separate class from WopiHost.Data.WopiDbContext)
+builder.Services.AddDbContext<Storage.Data.WopiDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// --- JWT auth ---
+builder.Services.AddOptions<JwtConfig>()
+    .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
+    .Validate(cfg =>
+        !string.IsNullOrWhiteSpace(cfg.Issuer) &&
+        !string.IsNullOrWhiteSpace(cfg.Audience) &&
+        !string.IsNullOrWhiteSpace(cfg.Secret) &&
+        cfg.Secret.Length >= 73 &&
+        cfg.ExpiresMinutes > 0,
+        "Invalid JWT configuration")
+    .ValidateOnStart();
+
+var jwt = builder.Configuration.GetSection("Authentication:Jwt");
+var secretKeyBytes = Encoding.UTF8.GetBytes(jwt["Secret"]!);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwt["Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(secretKeyBytes),
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
+            RoleClaimType = "role"
+        };
+    });
+
+// --- Swagger ---
+builder.Services.AddSwaggerGen(s =>
+{
+    s.SwaggerDoc("v1", new OpenApiInfo { Title = "WOPI Host API", Version = "v1" });
+    s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Paste bearer token (without 'Bearer ' prefix)",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+    s.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// --- Identity helpers (if used) ---
+builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
+
+// --- Storage layer registrations ---
+builder.Services.AddScoped<IFileRepository, FileRepository>();
+builder.Services.AddScoped<IFileStorage, FileStorage>();
+builder.Services.AddScoped<Storage.Services.IFileService, Storage.Services.FileService>();
+
+// If you also have separate WopiHost services, keep their interfaces explicit to avoid name clashes:
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// --- MVC / JSON ---
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // WOPI expects PascalCase property names in many examples; keep as you had
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
+
+// ------------------------
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+
+app.UseHttpsRedirection();
+
+// IMPORTANT: auth before authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+
+
+/*using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
 using WopiHost.Data;
 using WopiHost.Models;
 using WopiHost.Services;
@@ -116,3 +256,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+*/

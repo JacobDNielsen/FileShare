@@ -1,17 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
-using Storage.Services;
-using Storage.Models;
-using Storage.Dto;
+/*using Microsoft.AspNetCore.Mvc;
+using WopiHost.Services;
+using WopiHost.Models;
+using WopiHost.Dto;
 
-namespace Storage.Controllers;
+namespace WopiHost.Controllers;
 
 [ApiController]
 [Route("wopi/files")]
 public class FileController : ControllerBase
 {
-    private readonly IFileService _fileService;
+    private readonly FileService _fileService;
 
-    public FileController(IFileService fileService)
+    public FileController(FileService fileService)
     {
         _fileService = fileService;
     }
@@ -164,4 +164,14 @@ public class FileController : ControllerBase
         var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
         return Ok(url);
     }
-}
+       
+    [HttpGet("paged")]
+       public async Task<ActionResult<PagedResult<FileListItem>>> List(
+        [FromQuery] PageQuery q,
+        CancellationToken ct)
+    {
+        var result = await _fileService.GetFilesPagedAsync(q, ct);
+
+        return Ok(result);
+    }
+}*/
