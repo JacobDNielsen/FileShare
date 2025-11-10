@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using WopiHost.Data;
 using WopiHost.Models;
 using WopiHost.Services;
@@ -14,38 +15,39 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddOptions<JwtConfig> ()
+var jwt = builder.Configuration.GetSection("Authentication:Jwt");
+var issuer = jwt["Issuer"]!.TrimEnd('/');
+var audience = jwt["Audience"]!.TrimEnd('/');
+
+
+
+builder.Services.AddOptions<JwtConsumerConfig> ()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
     {
         return !string.IsNullOrWhiteSpace(config.Issuer) &&
-               !string.IsNullOrWhiteSpace(config.Audience) &&
-               !string.IsNullOrWhiteSpace(config.Secret) &&
-                config.Secret.Length >= 73 && //current secret is 73 chars long
-               config.ExpiresMinutes > 0;
+               !string.IsNullOrWhiteSpace(config.Audience);
     }, "Invalid JWT configuration")
     .ValidateOnStart();
-
-var jwt = builder.Configuration.GetSection("Authentication:Jwt");
-var secretKeyBytes = Encoding.UTF8.GetBytes(jwt["Secret"]!);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    options.Authority = issuer;
+    options.RequireHttpsMetadata = false;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = jwt["Issuer"],
+        ValidIssuer = issuer,
 
         ValidateAudience = true,
-        ValidAudience = jwt["Audience"],
-
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(secretKeyBytes),
+        ValidAudience = audience,
 
         ValidateLifetime = true,
         RequireExpirationTime = true,
         ClockSkew = TimeSpan.FromSeconds(30),
+
+        ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 },
 
         //Map of OIDC-standard claim names to ASP-NET claim names
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
@@ -81,7 +83,6 @@ builder.Services.AddSwaggerGen(s =>
     });
 });
 
-builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 
 builder.Services.AddAuthorization();
 // Add services to the container.
@@ -92,8 +93,6 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null; //sørger for at vi skriver i Pascal-case til wopi client
     });
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -110,7 +109,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
