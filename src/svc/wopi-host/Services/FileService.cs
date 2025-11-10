@@ -114,7 +114,7 @@ public class FileService
         {
             foreach (var path in Directory.EnumerateFiles(_storagePath, "*.bin"))
             {
-                try { File.Delete(path); } catch { /* ignore }
+                 try { File.Delete(path); } catch { /*ignore*/ /* } 
             }
         }
 
