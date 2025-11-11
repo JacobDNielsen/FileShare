@@ -21,7 +21,7 @@ public sealed class JwtSigningKeyStore
             throw new InvalidOperationException("Authentication:Jwt:LatestKeyId is missing!");
         }
 
-        if (config.SigningKeys.Count == 0 || config.SigningKeys is null)
+        if (config.SigningKeys is null || config.SigningKeys.Count == 0 )
         {
             throw new InvalidOperationException("Authentication:Jwt:SigningKeys is missing or empty!");
         }
