@@ -14,8 +14,6 @@ var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
 var audience = jwt["Audience"]!.TrimEnd('/');
 
-
-
 builder.Services.AddOptions<JwtConsumerConfig> ()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
