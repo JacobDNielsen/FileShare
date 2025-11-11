@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -45,7 +46,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         //Map of OIDC-standard claim names to ASP-NET claim names
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
-        RoleClaimType = "role"
+        RoleClaimType = ClaimTypes.Role
     };
 });
 

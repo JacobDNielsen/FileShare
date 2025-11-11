@@ -27,7 +27,7 @@ public sealed class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), //unique identifier for the token
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), //issued at time for token
-
+            new Claim(ClaimTypes.Role, "Admin"),
             new Claim(JwtRegisteredClaimNames.PreferredUsername, userName)
         };
 
