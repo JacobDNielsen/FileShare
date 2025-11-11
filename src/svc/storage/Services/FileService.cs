@@ -3,37 +3,34 @@ using Storage.Data;
 using Storage.Models;
 using Microsoft.AspNetCore.Http;
 using Storage.Dto;
+using Storage.Repositories;
+using Microsoft.Extensions.Caching.Memory;
+using Storage.FileStorage;
+using Storage.Helpers;
 
 namespace Storage.Services;
 
-public class FileService
+public class FileService : IFileService
 {
-    private readonly WopiDbContext _dbContext;
-    private readonly string _storagePath;
+    private readonly IFileRepository _repo;
+    private readonly IFileStorage _storage;
 
-    public FileService(WopiDbContext dbContext)
+        public FileService(IFileRepository repo, IFileStorage storage)
     {
-        _dbContext = dbContext;
-        var storageRoot = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-        _storagePath = Path.Combine(storageRoot, "Files");
-
-        Directory.CreateDirectory(_storagePath);
+        _repo = repo;
+        _storage = storage;
     }
 
-    private string PathFor(string fileId)
+     public async Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct)
     {
-        return Path.Combine(_storagePath, $"{fileId}.bin");
+        return await _repo.GetAllFilesMetadataAsync(ct);
     }
-
-    public async Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct)
-    {
-        return await _dbContext.Files.AsNoTracking().ToListAsync(ct);
-    }
-
+        
     public async Task<FileMetadata?> CheckFileInfoAsync(string fileId, CancellationToken ct)
     {
-        return await _dbContext.Files.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId, ct);
+        return await _repo.GetFileMetadataAsync(fileId, ct);
     }
+        
 
     public async Task<FileMetadata> UploadAsync(IFormFile file, CancellationToken ct)
     {
@@ -46,49 +43,42 @@ public class FileService
             LastModifiedAt = DateTimeOffset.UtcNow
         };
 
-        _dbContext.Files.Add(metadata);
-        await _dbContext.SaveChangesAsync(ct);
+        metadata = await _repo.InsertFileMetadataAsync(metadata, ct);
 
-        var filePath = PathFor(metadata.FileId);
-
-        using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+        try
         {
-            await file.CopyToAsync(stream, ct);
+            await _storage.SaveAsync(metadata.FileId, file, ct);
+        }
+        catch
+        {
+            await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
+            throw;
         }
 
         return metadata;
-    }
+        }
 
     public async Task<(Stream? Stream, string? FileName)> GetFileAsync(string fileId, CancellationToken ct)
     {
         var metadata = await CheckFileInfoAsync(fileId, ct);
-        if (metadata == null)
-        {
-            return (null, null);
-        }
+        if (metadata == null) return (null, null);
+        
+        var stream = await _storage.OpenReadAsync(fileId, ct);
+        if (stream is null) return (null, null);
 
-        var filePath = PathFor(fileId);
-        if (!File.Exists(filePath))
-        {
-            return (null, null);
-        }
-
-        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         return (stream, metadata.BaseFileName);
     }
 
     public async Task DeleteFileAsync(string fileId, CancellationToken ct)
     {
-        var entity = await _dbContext.Files.FirstOrDefaultAsync(f => f.FileId == fileId, ct);
+        var entity = await _repo.GetFileMetadataAsync(fileId, ct);
         if (entity == null)
             throw new FileNotFoundException($"File with ID '{fileId}' was not found.");
 
-        var filePath = PathFor(fileId);
-
         try
         {
-            if (File.Exists(filePath))
-                File.Delete(filePath);
+            await _storage.DeleteAsync(fileId, ct);
+            
         }
         catch (IOException ex)
         {
@@ -96,57 +86,47 @@ public class FileService
             throw new InvalidOperationException($"File is in use or locked: {ex.Message}", ex);
         }
 
-        _dbContext.Files.Remove(entity);
-        await _dbContext.SaveChangesAsync(ct);
+        await _repo.DeleteFileMetadataAsync(fileId, ct);
     }
 
     public async Task<List<string>> DeleteAllFilesAsync(CancellationToken ct)
     {
-        var deletedNames = await _dbContext.Files
-            .AsNoTracking()
-            .Select(f => f.BaseFileName)
-            .ToListAsync(ct);
-
-        // vi håndtere ikke errors endnu...
-        // sletter filer fra disken/serveren
-        if (Directory.Exists(_storagePath))
-        {
-            foreach (var path in Directory.EnumerateFiles(_storagePath, "*.bin"))
-            {
-                try { File.Delete(path); } catch { /* ignore */ }
-            }
-        }
-
-        // 3) sletter DB rows
-        await _dbContext.Files.ExecuteDeleteAsync(ct);
-
-        // 4) Hand back the names that were in the DB
+        var deletedNames = await _repo.DeleteAllFileMetadataAsync(ct); //db rows
+        await _storage.DeleteAllAsync(ct); //fysisk fil
         return deletedNames;
     }
 
 
     public async Task<FileMetadata?> RenameFileAsync(string fileId, string newName, CancellationToken ct)
     {
-        var entity = await _dbContext.Files.FirstOrDefaultAsync(f => f.FileId == fileId, ct);
-        if (entity == null)
-            return null;
+        var entity = await _repo.GetFileMetadataAsync(fileId, ct);
+        if (entity == null) return null;
 
-        var oldFilePath = PathFor(fileId);
-        var newFilePath = Path.Combine(_storagePath, $"{fileId}.bin");
+        entity.BaseFileName = newName;
+        entity.LastModifiedAt = DateTimeOffset.UtcNow;
 
         try
         {
             //opdater navn i databasen kun...
-            entity.BaseFileName = newName;
-            entity.LastModifiedAt = DateTimeOffset.UtcNow;
-
-            await _dbContext.SaveChangesAsync(ct);
+            return await _repo.UpdateFileMetadataAsync(entity, ct);
         }
         catch (DbUpdateException ex)
         {
             throw new InvalidOperationException($"Failed to rename file: {ex.Message}", ex);
         }
-
-        return entity;
     }
+    public async Task<PagedResult<FileListItem>> GetFilesPagedAsync(PageQuery q, CancellationToken ct)
+    {
+        var baseQuery = _repo.Query(); // <-- from repo, not _storage
+
+        return await baseQuery.ToPagedResultAsync<FileMetadata, FileListItem>(
+            q,
+            orderBy: qy => qy
+                .OrderByDescending(f => f.LastModifiedAt)
+                .ThenBy(f => f.FileId),
+            selector: f => new FileListItem(f.FileId, f.BaseFileName, f.Size, f.LastModifiedAt),
+            ct: ct
+        );
+    }
+
 }

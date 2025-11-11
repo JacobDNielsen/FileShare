@@ -1,3 +1,4 @@
+namespace WopiHost.Dto;
 public class CheckFileInfoResponse
 {
     public string BaseFileName { get; set; } = null!;

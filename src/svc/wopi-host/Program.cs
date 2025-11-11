@@ -4,32 +4,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
-using WopiHost.Data;
-using WopiHost.Models;
-using WopiHost.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-builder.Services.AddDbContext<WopiDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddOptions<JwtConfig> ()
-    .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
-    .Validate(config =>
-    {
-        return !string.IsNullOrWhiteSpace(config.Issuer) &&
-               !string.IsNullOrWhiteSpace(config.Audience) &&
-               !string.IsNullOrWhiteSpace(config.Secret) &&
-                config.Secret.Length >= 73 && //current secret is 73 chars long
-               config.ExpiresMinutes > 0;
-    }, "Invalid JWT configuration")
-    .ValidateOnStart();
-
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
-var secretKeyBytes = Encoding.UTF8.GetBytes(jwt["Secret"]!);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+/*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -51,7 +33,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = "role"
     };
-});
+});*/
 
 builder.Services.AddSwaggerGen(s =>
 {
@@ -81,22 +63,26 @@ builder.Services.AddSwaggerGen(s =>
     });
 });
 
-builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 
 builder.Services.AddAuthorization();
 // Add services to the container.
 
-builder.Services.AddScoped<FileService>();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null; //sørger for at vi skriver i Pascal-case til wopi client
     });
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
+
+// Register the typed HttpClient for communicating with the Storage microservice
+builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
+{
+    // Base URL of your Storage service (set in appsettings.json or environment variable)
+    client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 

@@ -9,9 +9,9 @@ namespace Storage.Controllers;
 [Route("wopi/files")]
 public class FileController : ControllerBase
 {
-    private readonly FileService _fileService;
+    private readonly IFileService _fileService;
 
-    public FileController(FileService fileService)
+    public FileController(IFileService fileService)
     {
         _fileService = fileService;
     }
@@ -163,5 +163,15 @@ public class FileController : ControllerBase
     {
         var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
         return Ok(url);
+    }
+
+        [HttpGet("paged")]
+       public async Task<ActionResult<PagedResult<FileListItem>>> List(
+        [FromQuery] PageQuery q,
+        CancellationToken ct)
+    {
+        var result = await _fileService.GetFilesPagedAsync(q, ct);
+
+        return Ok(result);
     }
 }
