@@ -1,18 +1,18 @@
 
 using Microsoft.AspNetCore.Identity;
-using User.Dto;
-using User.Models;
-using User.Interfaces;
+using Auth.Dto;
+using Auth.Models;
+using Auth.Interfaces;
 
-namespace User.Services;
+namespace Auth.Services;
 
-public class UserService : IUserService
+public class AuthService : IAuthService
 {
-    private readonly IUserRepository _repository;
+    private readonly IAuthRepository _repository;
     private readonly IJwtService _jwtService;
     private readonly IPasswordHasher<UserAccount> _passwordHasher;
 
-    public UserService(IUserRepository repository, IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
+    public AuthService(IAuthRepository repository, IJwtService jwtService, IPasswordHasher<UserAccount> passwordHasher)
     {
         _repository = repository;
         _jwtService = jwtService;

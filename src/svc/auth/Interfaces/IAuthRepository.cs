@@ -1,8 +1,8 @@
-using User.Models;
+using Auth.Models;
 
-namespace User.Interfaces;
+namespace Auth.Interfaces;
 
-public interface IUserRepository
+public interface IAuthRepository
 {
     Task<bool> ExistsByUsernameOrEmailAsync(string userName, string email, CancellationToken ct);
     Task<UserAccount?> GetUserByUsernameAsync(string userName, CancellationToken ct);

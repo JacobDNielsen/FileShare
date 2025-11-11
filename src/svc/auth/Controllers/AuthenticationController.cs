@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
-using User.Interfaces;
-using User.Dto;
+using Auth.Interfaces;
+using Auth.Dto;
 
 
-namespace User.Controllers;
+namespace Auth.Controllers;
 
 [ApiController]
 [Route("authentication")]
 public sealed class AuthenticationController : ControllerBase
 {
-    private readonly IUserService _userService;
+    private readonly IAuthService _authService;
 
-    public AuthenticationController(IUserService userService)
+    public AuthenticationController(IAuthService userService)
     {
-        _userService = userService;
+        _authService = userService;
     }
 
     [HttpPost("signup")]
@@ -23,7 +23,7 @@ public sealed class AuthenticationController : ControllerBase
     {
         try
         {
-            var authResponse = await _userService.SignupAsync(req, ct);
+            var authResponse = await _authService.SignupAsync(req, ct);
             return Created(nameof(Login), authResponse);
         }
         catch (InvalidOperationException ex)
@@ -37,7 +37,7 @@ public sealed class AuthenticationController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginReq req, CancellationToken ct)
     {
-        var authResponse = await _userService.LoginAsync(req, ct);
+        var authResponse = await _authService.LoginAsync(req, ct);
         if (authResponse == null)
         {
             return Unauthorized(new { message = "Invalid username or password" });

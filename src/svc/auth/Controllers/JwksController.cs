@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using User.Services;
-using User.Models;
+using Auth.Services;
+using Auth.Models;
 
 [ApiController]
 [Route(".well-known")]

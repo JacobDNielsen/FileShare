@@ -1,15 +1,15 @@
-using User.Interfaces;
-using User.Models;
-using User.Data;
+using Auth.Interfaces;
+using Auth.Models;
+using Auth.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace User.Repository;
+namespace Auth.Repository;
 
-public class UserRepository : IUserRepository
+public class AuthRepository : IAuthRepository
 {
     private readonly AuthDbContext _dbContext;
 
-    public UserRepository(AuthDbContext dbContext)
+    public AuthRepository(AuthDbContext dbContext)
     {
         _dbContext = dbContext;
     }

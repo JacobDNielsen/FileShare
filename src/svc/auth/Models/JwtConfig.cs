@@ -1,4 +1,4 @@
-namespace User.Models;
+namespace Auth.Models;
 
 /// <summary>
 ///  Our JWT configuration settings, used for issuing JWT access tokens.
