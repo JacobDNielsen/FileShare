@@ -13,8 +13,8 @@ dotnet user-secrets set "Authentication:Jwt:SigningKeys:0:PrivateKey" "$(cat kid
 Then select the currently active key:
 dotnet user-secrets set "Authentication:Jwt:LatestKeyId" "kid-1"
 
-If one later adds a new key for signing, then do as above but change to another KeyId and another PrivateKey
-Then set LatestKeyId to the value of KeyId (allows for rotating keys)
-
-
 !! Afterwards delete kid(number).pem file, generated in root of User folder !!
+
+If one later adds a new key for signing, then do as above but change to another KeyId and another PrivateKey.
+Also remember to use another index. E,g, ...Jwt:SigningKeys:1:... - when introducing new key.  
+Then set LatestKeyId to the value of KeyId (allows for rotating keys)
