@@ -1,4 +1,4 @@
-namespace User.Models
+namespace Auth.Models
 {
     public class UserAccount
     {

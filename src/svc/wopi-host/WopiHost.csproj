@@ -5,8 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WopiHost</RootNamespace>
-    
-    <UserSecretsId>9576b022-254b-4cab-baf5-ec040b583ce5</UserSecretsId>
+    <UserSecretsId>ebd38161-8673-4677-a670-bd9d03784664</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

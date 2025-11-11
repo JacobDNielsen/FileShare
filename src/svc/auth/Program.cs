@@ -4,11 +4,11 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using User.Services;
-using User.Interfaces;
-using User.Models;
-using User.Data;
-using User.Repository;
+using Auth.Services;
+using Auth.Interfaces;
+using Auth.Models;
+using Auth.Data;
+using Auth.Repository;
 
 
 
@@ -33,7 +33,7 @@ builder.Services.AddSingleton<JwtSigningKeyStore>();
 
 builder.Services.AddSwaggerGen(s =>
 {
-    s.SwaggerDoc("v1", new OpenApiInfo { Title = "User API", Version = "v1" });
+    s.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth API", Version = "v1" });
 });
 
 builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
@@ -42,8 +42,8 @@ builder.Services.AddAuthorization();
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -59,10 +59,12 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/debug/authconfig", (IConfiguration config) =>
     {
         return Results.Json(config.GetSection("Authentication").AsEnumerable());
-    });
+    })
+    .WithTags("DebugAuthConfiguration");
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+    .WithTags("RootRedirect");
 
 app.UseHttpsRedirection();
 

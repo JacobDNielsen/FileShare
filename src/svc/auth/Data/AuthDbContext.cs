@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using User.Models;
+using Auth.Models;
 
-namespace User.Data;
+namespace Auth.Data;
 
 public class AuthDbContext : DbContext
 {

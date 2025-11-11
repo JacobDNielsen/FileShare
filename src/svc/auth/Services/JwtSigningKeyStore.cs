@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using User.Models;
+using Auth.Models;
 
-namespace User.Services;
+namespace Auth.Services;
 
 public sealed class JwtSigningKeyStore
 {
