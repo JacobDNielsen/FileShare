@@ -164,4 +164,14 @@ public class FileController : ControllerBase
         var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{fileId}&acess_token=securetoken";
         return Ok(url);
     }
+
+        [HttpGet("paged")]
+       public async Task<ActionResult<PagedResult<FileListItem>>> List(
+        [FromQuery] PageQuery q,
+        CancellationToken ct)
+    {
+        var result = await _fileService.GetFilesPagedAsync(q, ct);
+
+        return Ok(result);
+    }
 }

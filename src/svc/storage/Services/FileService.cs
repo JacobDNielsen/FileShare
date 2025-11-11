@@ -6,6 +6,7 @@ using Storage.Dto;
 using Storage.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Storage.FileStorage;
+using Storage.Helpers;
 
 namespace Storage.Services;
 
@@ -114,4 +115,18 @@ public class FileService : IFileService
             throw new InvalidOperationException($"Failed to rename file: {ex.Message}", ex);
         }
     }
+    public async Task<PagedResult<FileListItem>> GetFilesPagedAsync(PageQuery q, CancellationToken ct)
+    {
+        var baseQuery = _repo.Query(); // <-- from repo, not _storage
+
+        return await baseQuery.ToPagedResultAsync<FileMetadata, FileListItem>(
+            q,
+            orderBy: qy => qy
+                .OrderByDescending(f => f.LastModifiedAt)
+                .ThenBy(f => f.FileId),
+            selector: f => new FileListItem(f.FileId, f.BaseFileName, f.Size, f.LastModifiedAt),
+            ct: ct
+        );
+    }
+
 }

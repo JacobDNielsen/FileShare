@@ -11,6 +11,9 @@ public sealed class FileRepository : IFileRepository
 
     public FileRepository(WopiDbContext dbContext) => _dbContext = dbContext;
 
+    public IQueryable<FileMetadata> Query()
+         => _dbContext.Files.AsNoTracking(); 
+
 
     public Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct) =>
         _dbContext.Files.AsNoTracking().ToListAsync(ct);

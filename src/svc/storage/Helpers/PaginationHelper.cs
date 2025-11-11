@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using WopiHost.Dto;
+using Storage.Dto;
 
-namespace WopiHost.Common;
+namespace Storage.Helpers;
 
 public static class PaginationExtensions
 {

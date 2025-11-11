@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Http;
 using Storage.Models;
+using Storage.Dto;
 
 namespace Storage.Services;
 
@@ -12,4 +12,5 @@ public interface IFileService
     Task DeleteFileAsync(string fileId, CancellationToken ct);
     Task<List<string>> DeleteAllFilesAsync(CancellationToken ct);
     Task<FileMetadata?> RenameFileAsync(string fileId, string newName, CancellationToken ct);
+    Task<PagedResult<FileListItem>> GetFilesPagedAsync(PageQuery q, CancellationToken ct);
 }
