@@ -56,7 +56,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapGet("/debug/auth", (IConfiguration config) =>
+    app.MapGet("/debug/authconfig", (IConfiguration config) =>
     {
         return Results.Json(config.GetSection("Authentication").AsEnumerable());
     });
