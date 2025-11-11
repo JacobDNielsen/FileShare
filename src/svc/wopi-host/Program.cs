@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using WopiHost.Data;
 using WopiHost.Models;
 using WopiHost.Services;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -51,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         //Map of OIDC-standard claim names to ASP-NET claim names
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
-        RoleClaimType = "role"
+        RoleClaimType = ClaimTypes.Role
     };
 });
 

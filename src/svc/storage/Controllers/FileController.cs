@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Storage.Services;
 using Storage.Models;
 using Storage.Dto;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Storage.Controllers;
 
@@ -17,6 +18,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAllFilesMetadata(CancellationToken ct)
     {
         var files = await _fileService.GetAllFilesMetadataAsync(ct);
@@ -124,6 +126,7 @@ public class FileController : ControllerBase
     }
 
     [HttpDelete("all")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteAll(CancellationToken ct)
     {
         var names = await _fileService.DeleteAllFilesAsync(ct);

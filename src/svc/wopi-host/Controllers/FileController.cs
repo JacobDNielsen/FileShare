@@ -18,7 +18,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllFilesMetadata(CancellationToken ct)
     {
         var files = await _fileService.GetAllFilesMetadataAsync(ct);
