@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Storage.Data;
 using Storage.Models;
 using Storage.Repositories;
+namespace Storage.Repositories;
 
 public sealed class FileRepository : IFileRepository
 {

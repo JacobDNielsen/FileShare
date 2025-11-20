@@ -1,4 +1,5 @@
 using WopiHost.Dto;
+
 public sealed class StorageClient : IStorageClient
 {
     private readonly HttpClient _http;
