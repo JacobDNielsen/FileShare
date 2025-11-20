@@ -6,6 +6,7 @@ using Storage.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
+using Storage.FileStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,7 +87,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
-builder.Services.AddScoped<FileService>();
+builder.Services.AddScoped<IFileStorage, FileStorage>();
 
 var app = builder.Build();
 
