@@ -1,4 +1,5 @@
 using WopiHost.Dto;
+namespace WopiHost.StorageClient;
 
 public interface IStorageClient
 {

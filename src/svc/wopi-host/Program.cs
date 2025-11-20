@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -76,6 +77,7 @@ builder.Services.AddSwaggerGen(s =>
     });
 });
 
+builder.Services.AddScoped<IStorageClient, StorageClient>();
 
 builder.Services.AddAuthorization();
 // Add services to the container.
