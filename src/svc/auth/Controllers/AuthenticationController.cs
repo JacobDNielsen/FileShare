@@ -1,32 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
-using User.Services;
-using User.Models;
-using User.Dto;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Auth.Interfaces;
+using Auth.Dto;
 
-namespace WopiHost.Controllers;
+
+namespace Auth.Controllers;
 
 [ApiController]
 [Route("authentication")]
 public sealed class AuthenticationController : ControllerBase
 {
-    private readonly IUserService _userService;
+    private readonly IAuthService _authService;
 
-    public AuthenticationController(IUserService userService)
+    public AuthenticationController(IAuthService userService)
     {
-        _userService = userService;
+        _authService = userService;
     }
 
     [HttpPost("signup")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResp), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Signup([FromBody] SignupReq req, CancellationToken ct)
     {
         try
         {
-            var authResponse = await _userService.SignupAsync(req, ct);
+            var authResponse = await _authService.SignupAsync(req, ct);
             return Created(nameof(Login), authResponse);
         }
         catch (InvalidOperationException ex)
@@ -36,30 +33,15 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResp), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginReq req, CancellationToken ct)
     {
-        var authResponse = await _userService.LoginAsync(req, ct);
+        var authResponse = await _authService.LoginAsync(req, ct);
         if (authResponse == null)
         {
             return Unauthorized(new { message = "Invalid username or password" });
         }
         return Ok(authResponse);
-    }
-
-    [HttpGet("profile")]
-    [Authorize]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-    public IActionResult Profile()
-    {
-        var userName = User.Identity?.Name ?? "Unknown";
-        return Ok(new
-        {
-            message = $"Hello, {userName}. This is your profile.",
-            sub = User.FindFirstValue(ClaimTypes.NameIdentifier),
-            name = User.Identity?.Name
-        });
     }
 }

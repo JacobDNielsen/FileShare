@@ -3,20 +3,20 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
-using User.Models;
+using Auth.Models;
+using Auth.Interfaces;
 
-namespace User.Services;
+namespace Auth.Services;
 
 public sealed class JwtService : IJwtService
 {
     private readonly JwtConfig _config;
     private readonly SigningCredentials _signingCreds;
 
-    public JwtService(IOptions<JwtConfig> options)
+    public JwtService(IOptions<JwtConfig> options, JwtSigningKeyStore keyStore)
     {
         _config = options.Value;
-        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.Secret));
-        _signingCreds = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+        _signingCreds = keyStore.GetLatestSigningCredentials();
     }
 
     public string JwtTokenGenerator(string userId, string userName)
@@ -27,7 +27,7 @@ public sealed class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), //unique identifier for the token
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), //issued at time for token
-
+            new Claim(ClaimTypes.Role, "Admin"),
             new Claim(JwtRegisteredClaimNames.PreferredUsername, userName)
         };
 

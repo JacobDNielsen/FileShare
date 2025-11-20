@@ -1,4 +1,4 @@
-namespace User.Services;
+namespace Auth.Interfaces;
 
 public interface IJwtService
 {
