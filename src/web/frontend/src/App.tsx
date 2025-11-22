@@ -26,6 +26,7 @@ function App() {
   });
   const [storageResult, setStorageResult] = useState<JSON | null>(null);
   const [wopiResult, setWopiResult] = useState<string | null>(null);
+  const [fileId, setFileId] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   const handleLogin = async (e: FormEvent) => {
@@ -74,7 +75,7 @@ function App() {
     alert("Logged out successfully!");
   };
 
-  const callStorageApi = async () => {
+  const callStorageApiGetAllFiles = async () => {
     setError("");
     setStorageResult(null);
     try {
@@ -86,13 +87,18 @@ function App() {
     }
   };
 
-  const FILE_ID: string = "ed6297cdfad24ba29fee66ca50f47b87";
-  const callWopiApi = async () => {
+  const callWopiApiUrlBuilder = async () => {
     setError("");
     setWopiResult(null);
+
+    if (!fileId.trim()) {
+      setError("Please enter a valid File ID.");
+      return;
+    }
+
     try {
       const response = await wopiHostApiClient.get<string>(
-        `/wopi/files/${FILE_ID}/urlBuilder`
+        `/wopi/files/${fileId}/urlBuilder`
       );
       setWopiResult(response.data);
     } catch (err) {
@@ -134,12 +140,21 @@ function App() {
         <button onClick={handleLogout} disabled={!isLoggedIn}>
           Logout
         </button>
-        <button onClick={callStorageApi} disabled={!isLoggedIn}>
-          Call Storage API
+        <button onClick={callStorageApiGetAllFiles} disabled={!isLoggedIn}>
+          GetAllFiles (Storage API)
         </button>
-        <button onClick={callWopiApi} disabled={!isLoggedIn}>
-          Call WOPI Host API
-        </button>
+        <div>
+          <button onClick={callWopiApiUrlBuilder} disabled={!isLoggedIn}>
+            Call UrlBuilder (WOPI Host API)
+          </button>
+          <label>File ID:</label>
+          <input
+            type="text"
+            value={fileId}
+            onChange={(e) => setFileId(e.target.value)}
+            placeholder="Enter the file ID"
+          />
+        </div>
       </div>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
