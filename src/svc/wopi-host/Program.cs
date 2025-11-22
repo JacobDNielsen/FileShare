@@ -85,6 +85,15 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null; //sørger for at vi skriver i Pascal-case til wopi client
     });
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
@@ -96,6 +105,7 @@ builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
 });
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -114,5 +124,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseCors();
 app.Run();
