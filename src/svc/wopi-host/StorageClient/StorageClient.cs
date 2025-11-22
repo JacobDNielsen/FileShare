@@ -12,12 +12,7 @@ public sealed class StorageClient : IStorageClient
 
     public async Task<CheckFileInfoResponse?> CheckFileInfoAsync(string fileId, CancellationToken ct)
     {
-        var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
-        if (!string.IsNullOrEmpty(authHeader))
-        {
-            _http.DefaultRequestHeaders.Remove("Authorization");
-            _http.DefaultRequestHeaders.Add("Authorization", authHeader);
-        }
+        InjectAuthorizationHeader();
 
         var response =  await _http.GetAsync($"/wopi/files/{Uri.EscapeDataString(fileId)}", ct);
         response.EnsureSuccessStatusCode();
@@ -26,9 +21,21 @@ public sealed class StorageClient : IStorageClient
     }
     public async Task<Stream> GetFile(string fileId, CancellationToken ct)
     {
+        InjectAuthorizationHeader();
+        
         var req = new HttpRequestMessage(HttpMethod.Get, $"/wopi/files/{Uri.EscapeDataString(fileId)}/contents");
         var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadAsStreamAsync(ct);
+    }
+
+    private void InjectAuthorizationHeader()
+    {
+        var authHeader = _httpContextAccessor.HttpContext?.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrEmpty(authHeader))
+        {
+            _http.DefaultRequestHeaders.Remove("Authorization");
+            _http.DefaultRequestHeaders.Add("Authorization", authHeader);
+        }
     }
 }
