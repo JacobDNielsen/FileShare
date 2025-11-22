@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using WopiHost.Dto;
 
 [ApiController]
+[Authorize]
 [Route("wopi/files")]
 public sealed class WopiFilesController : ControllerBase
 {
