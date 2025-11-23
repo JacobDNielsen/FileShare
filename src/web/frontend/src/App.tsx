@@ -161,7 +161,7 @@ function App() {
     }
 
     if (!fileInfo) {
-      setError("No file info available. Please load file info first.");
+      setError("No file info available. Correct fileid?");
       return;
     }
 
@@ -247,6 +247,7 @@ function App() {
           >
             Load File Info
           </button>
+          {fileInfo && <button onClick={() => setFileInfo(null)}>Clear</button>}
         </div>
         {fileInfo && (
           <div>
@@ -274,13 +275,13 @@ function App() {
         <div>
           <button
             onClick={callWopiApiGetFile}
-            disabled={!isLoggedIn || !fileId}
-            style={!isLoggedIn || !fileId ? disabledBtnStyle : undefined}
+            disabled={!isLoggedIn || !fileInfo}
+            style={!isLoggedIn || !fileInfo ? disabledBtnStyle : undefined}
             title={
               !isLoggedIn
                 ? "Login to enable WOPI Host API calls"
-                : !fileId
-                  ? "Enter a File ID to enable"
+                : !fileInfo
+                  ? "Search for a file to enable"
                   : undefined
             }
           >
@@ -288,19 +289,19 @@ function App() {
           </button>
           <button
             onClick={callWopiApiUrlBuilder}
-            disabled={!isLoggedIn || !fileId}
+            disabled={!isLoggedIn || !fileInfo}
             style={
               !isLoggedIn
                 ? disabledBtnStyle
-                : !fileId
+                : !fileInfo
                   ? disabledBtnStyle
                   : undefined
             }
             title={
               !isLoggedIn
                 ? "Login to enable WOPI Host API calls"
-                : !fileId
-                  ? "Enter a File ID to enable"
+                : !fileInfo
+                  ? "Search for a file to enable"
                   : undefined
             }
           >
@@ -313,6 +314,7 @@ function App() {
       {storageResult !== null && (
         <div>
           <h2>Storage API Result:</h2>
+          <button onClick={() => setStorageResult(null)}>Clear</button>
           <pre>{JSON.stringify(storageResult, null, 2)}</pre>
         </div>
       )}
