@@ -65,13 +65,46 @@ public class FileController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, CancellationToken ct)
     {
-        if (fileRequest == null || fileRequest.File == null)
-        {
+        if (fileRequest?.File is null)
             return BadRequest("No file in request :')");
-        }
 
-        var metadata = await _fileService.UploadAsync(fileRequest.File, ct);
-        return CreatedAtAction(nameof(CheckFileInfo), new { fileId = metadata.FileId }, metadata);
+        var formFile = fileRequest.File;
+
+        await using var stream = formFile.OpenReadStream();
+
+        var metadata = await _fileService.UploadAsync(stream, formFile.FileName, formFile.Length, ct);
+
+        return CreatedAtAction(
+            nameof(CheckFileInfo),
+            new { fileId = metadata.FileId },
+            metadata);
+    }
+
+    [HttpPost("{fileId}/overwrite")]
+    public async Task<IActionResult> OverwriteFile(string fileId, [FromForm] FileUploadReq fileRequest, CancellationToken ct)
+    {
+        if (fileRequest?.File is null)
+            return BadRequest("No file in request :')");
+
+        var formFile = fileRequest.File;
+
+        await using var stream = formFile.OpenReadStream();
+
+        try
+        {
+            var metadata = await _fileService.OverwriteAsync(
+                fileId,
+                stream,
+                formFile.FileName,
+                formFile.Length,
+                ct);
+
+            return Ok(metadata);
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpGet("{fileId}/download")]

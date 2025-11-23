@@ -4,9 +4,9 @@ namespace Storage.FileStorage;
 
 public interface IFileStorage
 {
-    Task SaveAsync(string fileId, IFormFile file, CancellationToken ct);
+    Task SaveAsync(string fileId, Stream content, CancellationToken ct);
     Task<Stream?> OpenReadAsync(string fileId, CancellationToken ct);
-    Task OverwriteAsync(string fileId, IFormFile file, CancellationToken ct);
+    Task OverwriteAsync(string fileId, Stream content, CancellationToken ct);
     Task DeleteAsync(string fileId, CancellationToken ct);
     Task<int> DeleteAllAsync(CancellationToken ct);
 
