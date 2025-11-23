@@ -6,23 +6,17 @@ import {
   storageApiClient,
   wopiHostApiClient,
 } from "./apiClients";
+import type {
+  LoginResponse,
+  CheckFileInfoResponse,
+  JSONValue,
+} from "./models/models";
 
-interface LoginResponse {
-  userName: string;
-  tokenType: string;
-  accessToken: string;
-}
-
-interface CheckFileInfoResponse {
-  baseFileName: string;
-  size: number;
-  ownerId: string;
-  userId: string;
-  version: string;
-  userCanWrite: boolean;
-}
-
-type JSON = string | number | boolean | null | { [key: string]: JSON } | JSON[];
+import { AuthSection } from "./components/AuthSection";
+import { FileSection } from "./components/FileSection";
+import { StorageResultSection } from "./components/StorageResultSection";
+import { WopiResultSection } from "./components/WopiResultSection";
+import { ErrorMessage } from "./components/ErrorMessage";
 
 function App() {
   const [username, setUsername] = useState<string>("");
@@ -33,7 +27,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return !!Cookies.get("jwt");
   });
-  const [storageResult, setStorageResult] = useState<JSON | null>(null);
+  const [isloadingFileInfo, setIsloadingFileInfo] = useState<boolean>(false);
+  const [storageResult, setStorageResult] = useState<JSONValue | null>(null);
   const [wopiResult, setWopiResult] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string>("");
   const [fileInfo, setFileInfo] = useState<CheckFileInfoResponse | null>(null);
@@ -95,6 +90,7 @@ function App() {
       return;
     }
     try {
+      setIsloadingFileInfo(true);
       const response = await storageApiClient.get<CheckFileInfoResponse>(
         `/wopi/files/${encodeURIComponent(fileId)}`
       );
@@ -103,6 +99,8 @@ function App() {
       console.error("Storage API error:", err);
       setFileInfo(null);
       setError("Failed to fetch file info from Storage API. Correct fileid?");
+    } finally {
+      setIsloadingFileInfo(false);
     }
   };
 
@@ -110,11 +108,14 @@ function App() {
     setError("");
     setStorageResult(null);
     try {
-      const response = await storageApiClient.get<JSON>("/wopi/files");
+      setIsloadingFileInfo(true);
+      const response = await storageApiClient.get<JSONValue>("/wopi/files");
       setStorageResult(response.data);
     } catch (err) {
       console.error("Storage API error:", err);
       setError("Failed to fetch from Storage API.");
+    } finally {
+      setIsloadingFileInfo(false);
     }
   };
 
@@ -167,7 +168,7 @@ function App() {
 
     try {
       const response = await wopiHostApiClient.get<string>(
-        `/wopi/files/${encodeURI(fileId)}/urlBuilder`
+        `/wopi/files/${encodeURIComponent(fileId)}/urlBuilder`
       );
       setWopiResult(response.data);
     } catch (err) {
@@ -177,158 +178,43 @@ function App() {
   };
 
   //Helpers
-  const disabledBtnStyle = {
-    opacity: 0.5,
-    cursor: "not-allowed",
+  const handleFileIdChange = (value: string) => {
+    setFileId(value);
+    setFileInfo(null);
   };
 
   return (
     <div>
-      <h1>FileShare App</h1>
-      {isLoggedIn && loggedInUser && <p>Hello, {loggedInUser}</p>}
+      <AuthSection
+        username={username}
+        password={password}
+        isLoggedIn={isLoggedIn}
+        loggedInUser={loggedInUser}
+        onUsernameChange={setUsername}
+        onPasswordChange={setPassword}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+      />
 
-      {!isLoggedIn && (
-        <form onSubmit={handleLogin} style={{ marginBottom: "20px" }}>
-          <div>
-            <label>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
+      <FileSection
+        isLoggedIn={isLoggedIn}
+        fileId={fileId}
+        fileInfo={fileInfo}
+        onFileIdChange={handleFileIdChange}
+        onLoadFileInfo={handleLoadFileInfo}
+        onClearFileInfo={() => setFileInfo(null)}
+        onGetAllFiles={callStorageApiGetAllFiles}
+        onDownloadFile={callWopiApiGetFile}
+        onBuildUrl={callWopiApiUrlBuilder}
+        isLoadingFileInfo={isloadingFileInfo}
+      />
+      <ErrorMessage error={error} />
+      <StorageResultSection
+        storageResult={storageResult}
+        onClear={() => setStorageResult(null)}
+      />
 
-          <div>
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <button type="submit">Login</button>
-        </form>
-      )}
-
-      <div>
-        <button onClick={handleLogout} disabled={!isLoggedIn}>
-          Logout
-        </button>
-        <button
-          onClick={callStorageApiGetAllFiles}
-          disabled={!isLoggedIn}
-          style={!isLoggedIn ? disabledBtnStyle : undefined}
-          title={!isLoggedIn ? "Login to enable Storage API calls" : undefined}
-        >
-          GetAllFiles (Storage API)
-        </button>
-        <div style={{ marginTop: "20px" }}>
-          <input
-            type="text"
-            value={fileId}
-            onChange={(e) => {
-              setFileId(e.target.value);
-              setFileInfo(null);
-            }}
-            placeholder="Enter the file ID"
-          />
-          <button
-            onClick={handleLoadFileInfo}
-            disabled={!isLoggedIn || !fileId.trim()}
-            style={!isLoggedIn || !fileId.trim() ? disabledBtnStyle : undefined}
-            title={
-              !isLoggedIn
-                ? "Login to enable Storage API calls"
-                : !fileId.trim()
-                  ? "Enter a File ID to enable"
-                  : undefined
-            }
-          >
-            Load File Info
-          </button>
-          {fileInfo && <button onClick={() => setFileInfo(null)}>Clear</button>}
-        </div>
-        {fileInfo && (
-          <div>
-            <p>
-              <strong>File Name:</strong> {fileInfo.baseFileName}
-            </p>
-            <p>
-              <strong>Size:</strong> {fileInfo.size} bytes
-            </p>
-            <p>
-              <strong>Owner ID:</strong> {fileInfo.ownerId}
-            </p>
-            <p>
-              <strong>User ID:</strong> {fileInfo.userId}
-            </p>
-            <p>
-              <strong>Version:</strong> {fileInfo.version}
-            </p>
-            <p>
-              <strong>User Can Write:</strong>{" "}
-              {fileInfo.userCanWrite ? "Yes" : "No"}
-            </p>
-          </div>
-        )}
-        <div>
-          <button
-            onClick={callWopiApiGetFile}
-            disabled={!isLoggedIn || !fileInfo}
-            style={!isLoggedIn || !fileInfo ? disabledBtnStyle : undefined}
-            title={
-              !isLoggedIn
-                ? "Login to enable WOPI Host API calls"
-                : !fileInfo
-                  ? "Search for a file to enable"
-                  : undefined
-            }
-          >
-            Call GetFile (WOPI Host API download file)
-          </button>
-          <button
-            onClick={callWopiApiUrlBuilder}
-            disabled={!isLoggedIn || !fileInfo}
-            style={
-              !isLoggedIn
-                ? disabledBtnStyle
-                : !fileInfo
-                  ? disabledBtnStyle
-                  : undefined
-            }
-            title={
-              !isLoggedIn
-                ? "Login to enable WOPI Host API calls"
-                : !fileInfo
-                  ? "Search for a file to enable"
-                  : undefined
-            }
-          >
-            Call URL Builder (WOPI Host API)
-          </button>
-        </div>
-      </div>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {storageResult !== null && (
-        <div>
-          <h2>Storage API Result:</h2>
-          <button onClick={() => setStorageResult(null)}>Clear</button>
-          <pre>{JSON.stringify(storageResult, null, 2)}</pre>
-        </div>
-      )}
-
-      {wopiResult !== null && (
-        <div>
-          <h2>WOPI Host API Result:</h2>
-          <p>
-            <a href={wopiResult} target="_blank" rel="noopener noreferrer">
-              Open WOPI document
-            </a>
-          </p>
-        </div>
-      )}
+      <WopiResultSection wopiResult={wopiResult} />
     </div>
   );
 }
