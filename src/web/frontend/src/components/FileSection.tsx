@@ -41,6 +41,11 @@ export function FileSection({
           onClick={onGetAllFiles}
           disabled={disableStorageButton}
           style={disableStorageButton ? disabledBtnStyle : undefined}
+          title={
+            disableStorageButton
+              ? "Login to enable Storage API calls"
+              : undefined
+          }
         >
           {isLoadingFileInfo ? "Loading.. " : "GetAllFiles (Storage API)"}
         </button>
@@ -57,6 +62,13 @@ export function FileSection({
           onClick={onLoadFileInfo}
           disabled={disableLoadFileInfo}
           style={disableLoadFileInfo ? disabledBtnStyle : undefined}
+          title={
+            !isLoggedIn
+              ? "Login to enable Storage API calls"
+              : !fileId.trim()
+                ? "Enter a File ID to enable"
+                : undefined
+          }
         >
           {isLoadingFileInfo ? "Loading.. " : "Load File Info (Storage API)"}
         </button>
@@ -92,6 +104,15 @@ export function FileSection({
           onClick={onDownloadFile}
           disabled={disableWopiButtons}
           style={disableWopiButtons ? disabledBtnStyle : undefined}
+          title={
+            !disableWopiButtons
+              ? undefined
+              : !isLoggedIn
+                ? "Login to enable WOPI Host API calls"
+                : !fileInfo
+                  ? "Search for a file to enable"
+                  : undefined
+          }
         >
           Call GetFile (WOPI Host API download file)
         </button>
@@ -99,6 +120,15 @@ export function FileSection({
           onClick={onBuildUrl}
           disabled={disableWopiButtons}
           style={disableWopiButtons ? disabledBtnStyle : undefined}
+          title={
+            !disableWopiButtons
+              ? undefined
+              : !isLoggedIn
+                ? "Login to enable WOPI Host API calls"
+                : !fileInfo
+                  ? "Search for a file to enable"
+                  : undefined
+          }
         >
           Call URL builder (WOPI Host API)
         </button>
