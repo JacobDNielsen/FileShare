@@ -8,12 +8,11 @@ import {
 } from "./apiClients";
 import type {
   LoginResponse,
-  CheckFileInfoResponse,
-  JSONValue,
+  GetFileInfoResponse,
+  GetAllFilesMetadataResponse,
 } from "./models/models";
 
 import { AuthSection } from "./components/AuthSection";
-import { FileSection } from "./components/FileSection";
 import { StorageResultSection } from "./components/StorageResultSection";
 import { WopiResultSection } from "./components/WopiResultSection";
 import { ErrorMessage } from "./components/ErrorMessage";
@@ -28,10 +27,13 @@ function App() {
     return !!Cookies.get("jwt");
   });
   const [isloadingFileInfo, setIsloadingFileInfo] = useState<boolean>(false);
-  const [storageResult, setStorageResult] = useState<JSONValue | null>(null);
+  const [isLoadingAllFiles, setIsLoadingAllFiles] = useState<boolean>(false);
+  const [storageResult, setStorageResult] = useState<
+    GetAllFilesMetadataResponse[] | null
+  >(null);
   const [wopiResult, setWopiResult] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string>("");
-  const [fileInfo, setFileInfo] = useState<CheckFileInfoResponse | null>(null);
+  const [fileInfo, setFileInfo] = useState<GetFileInfoResponse | null>(null);
   const [error, setError] = useState<string>("");
 
   const handleLogin = async (e: FormEvent) => {
@@ -91,7 +93,7 @@ function App() {
     }
     try {
       setIsloadingFileInfo(true);
-      const response = await storageApiClient.get<CheckFileInfoResponse>(
+      const response = await storageApiClient.get<GetFileInfoResponse>(
         `/wopi/files/${encodeURIComponent(fileId)}`
       );
       setFileInfo(response.data);
@@ -108,14 +110,17 @@ function App() {
     setError("");
     setStorageResult(null);
     try {
-      setIsloadingFileInfo(true);
-      const response = await storageApiClient.get<JSONValue>("/wopi/files");
+      setIsLoadingAllFiles(true);
+      const response =
+        await storageApiClient.get<GetAllFilesMetadataResponse[]>(
+          "/wopi/files"
+        );
       setStorageResult(response.data);
     } catch (err) {
       console.error("Storage API error:", err);
       setError("Failed to fetch from Storage API.");
     } finally {
-      setIsloadingFileInfo(false);
+      setIsLoadingAllFiles(false);
     }
   };
 
@@ -128,13 +133,12 @@ function App() {
       return;
     }
 
-    if (!fileInfo) {
-      setError("No file info available. Correct fileid?");
-      return;
-    }
-
     try {
-      const fileName = fileInfo.baseFileName || "downloaded-file";
+      const fromFileInfo = fileInfo?.baseFileName;
+      const fromStorageList = storageResult?.find(
+        (f) => f.fileId === fileId
+      )?.baseFileName;
+      const fileName = fromFileInfo ?? fromStorageList ?? `${fileId}.bin`;
       const response = await wopiHostApiClient.get<Blob>(
         `/wopi/files/${encodeURIComponent(fileId)}/contents`,
         { responseType: "blob" }
@@ -158,11 +162,6 @@ function App() {
 
     if (!fileId.trim()) {
       setError("Please enter a valid File ID.");
-      return;
-    }
-
-    if (!fileInfo) {
-      setError("No file info available. Correct fileid?");
       return;
     }
 
@@ -196,25 +195,26 @@ function App() {
         onLogout={handleLogout}
       />
 
-      <FileSection
+      <StorageResultSection
         isLoggedIn={isLoggedIn}
         fileId={fileId}
         fileInfo={fileInfo}
+        storageResult={storageResult}
         onFileIdChange={handleFileIdChange}
         onLoadFileInfo={handleLoadFileInfo}
         onClearFileInfo={() => setFileInfo(null)}
         onGetAllFiles={callStorageApiGetAllFiles}
+        onClearStorageResult={() => setStorageResult(null)}
         onDownloadFile={callWopiApiGetFile}
         onBuildUrl={callWopiApiUrlBuilder}
         isLoadingFileInfo={isloadingFileInfo}
+        isLoadingAllFiles={isLoadingAllFiles}
       />
       <ErrorMessage error={error} />
-      <StorageResultSection
-        storageResult={storageResult}
-        onClear={() => setStorageResult(null)}
+      <WopiResultSection
+        wopiResult={wopiResult}
+        onClearWopiResult={() => setWopiResult(null)}
       />
-
-      <WopiResultSection wopiResult={wopiResult} />
     </div>
   );
 }

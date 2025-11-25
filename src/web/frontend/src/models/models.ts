@@ -4,7 +4,7 @@ export interface LoginResponse {
   accessToken: string;
 }
 
-export interface CheckFileInfoResponse {
+export interface GetFileInfoResponse {
   baseFileName: string;
   size: number;
   ownerId: string;
@@ -13,10 +13,11 @@ export interface CheckFileInfoResponse {
   userCanWrite: boolean;
 }
 
-export type JSONValue =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: JSONValue }
-  | JSONValue[];
+export interface GetAllFilesMetadataResponse {
+  id: number;
+  fileId: string;
+  baseFileName: string;
+  size: number;
+  createdAt: string;
+  lastModifiedAt: string;
+}
