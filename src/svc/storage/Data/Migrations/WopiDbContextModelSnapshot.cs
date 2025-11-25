@@ -81,6 +81,9 @@ namespace WopiHost.Data.Migrations
                     b.Property<DateTimeOffset>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
 
@@ -90,46 +93,6 @@ namespace WopiHost.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("metadata", (string)null);
-                });
-
-            modelBuilder.Entity("Storage.Models.UserAccount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("LastLoginAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("UserName")
-                        .IsUnique();
-
-                    b.ToTable("useraccounts", (string)null);
                 });
 
             modelBuilder.Entity("Storage.Models.FileLock", b =>
