@@ -3,6 +3,11 @@ using Storage.Services;
 using Storage.Models;
 using Storage.Dto;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+
+
 
 namespace Storage.Controllers;
 
@@ -53,8 +58,8 @@ public class FileController : ControllerBase
         {
             BaseFileName = metadata.BaseFileName,
             Size = metadata.Size,
-            OwnerId = "user", // Adjust as needed
-            UserId = "user",
+            OwnerId = metadata.OwnerId,
+            //UserId = "",
             Version = metadata.LastModifiedAt.Ticks.ToString(),
             UserCanWrite = true
         };
@@ -63,16 +68,32 @@ public class FileController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, CancellationToken ct)
+    public async Task<IActionResult> UploadFile([FromForm] FileUploadReq fileRequest, [FromHeader(Name = "Authorization")] string token, CancellationToken ct)
     {
         if (fileRequest?.File is null)
             return BadRequest("No file in request :')");
-
         var formFile = fileRequest.File;
+        var test = token.Substring("Bearer ".Length);
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(test);
+        var sub = jwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
+        if (string.IsNullOrWhiteSpace(sub))
+        {
+            return BadRequest("No user id found:"+ sub);
+        }
+
+
+        bool successfully_parsed = int.TryParse(sub, out int result);
+        if(!successfully_parsed){
+            return BadRequest("Could'nt parse OwnerId: "+sub);
+        }
+
+        int ownerId = Convert.ToInt32(sub); //evt lav try catch/ try parse her
+        
         await using var stream = formFile.OpenReadStream();
 
-        var metadata = await _fileService.UploadAsync(stream, formFile.FileName, formFile.Length, ct);
+        var metadata = await _fileService.UploadAsync(stream, formFile.FileName, ownerId, formFile.Length, ct);
 
         return CreatedAtAction(
             nameof(CheckFileInfo),
