@@ -24,11 +24,15 @@ public sealed class FileStorage : IFileStorage
 
     public string GetPath(string fileId) => PathFor(fileId);
 
-    public async Task SaveAsync(string fileId, IFormFile file, CancellationToken ct)
+    public async Task SaveAsync(string fileId, Stream content, CancellationToken ct)
     {
         var path = PathFor(fileId);
-        using var fs = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-        await file.CopyToAsync(fs, ct);
+        
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        await using var fs = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+
+        await content.CopyToAsync(fs, ct);
     }
 
     public Task<Stream?> OpenReadAsync(string fileId, CancellationToken ct)
@@ -39,11 +43,13 @@ public sealed class FileStorage : IFileStorage
         return Task.FromResult<Stream?>(s);
     }
 
-    public async Task OverwriteAsync(string fileId, IFormFile file, CancellationToken ct)
+    public async Task OverwriteAsync(string fileId, Stream content, CancellationToken ct)
     {
         var path = PathFor(fileId);
-        using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        await file.CopyToAsync(fs, ct);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        await using var fs = new FileStream(path,FileMode.Create, FileAccess.Write, FileShare.None);
+        await content.CopyToAsync(fs, ct);
     }
 
     public Task DeleteAsync(string fileId, CancellationToken ct)

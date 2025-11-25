@@ -30,15 +30,14 @@ public class FileService : IFileService
     {
         return await _repo.GetFileMetadataAsync(fileId, ct);
     }
-        
 
-    public async Task<FileMetadata> UploadAsync(IFormFile file, CancellationToken ct)
+
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, long size, CancellationToken ct)
     {
-
         var metadata = new FileMetadata
         {
-            BaseFileName = file.FileName,
-            Size = file.Length,
+            BaseFileName = fileName,
+            Size = size,
             CreatedAt = DateTimeOffset.UtcNow,
             LastModifiedAt = DateTimeOffset.UtcNow
         };
@@ -47,16 +46,36 @@ public class FileService : IFileService
 
         try
         {
-            await _storage.SaveAsync(metadata.FileId, file, ct);
+            await _storage.SaveAsync(metadata.FileId, content, ct);
         }
         catch
         {
+            // Roll back metadata if storage fails
             await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
             throw;
         }
 
         return metadata;
+    }
+    
+    public async Task<FileMetadata> OverwriteAsync(string fileId, Stream content, string fileName, long size, CancellationToken ct)
+    {
+        var metadata = await _repo.GetFileMetadataAsync(fileId, ct);
+        if (metadata is null)
+        {
+            throw new FileNotFoundException($"No file with id '{fileId}' exists.");
         }
+        // Update metadata fields
+        metadata.BaseFileName   = fileName;
+        metadata.Size           = size;
+        metadata.LastModifiedAt = DateTimeOffset.UtcNow;
+
+        // overwrite file on disk, then persist metadata changes
+        await _storage.OverwriteAsync(fileId, content, ct);
+        await _repo.UpdateFileMetadataAsync(metadata, ct);
+
+        return metadata;
+    }
 
     public async Task<(Stream? Stream, string? FileName)> GetFileAsync(string fileId, CancellationToken ct)
     {
