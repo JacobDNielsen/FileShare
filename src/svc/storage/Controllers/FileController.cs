@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Storage.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("wopi/files")]
 public class FileController : ControllerBase
 {
@@ -18,7 +19,6 @@ public class FileController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> GetAllFilesMetadata(CancellationToken ct)
     {
         var files = await _fileService.GetAllFilesMetadataAsync(ct);

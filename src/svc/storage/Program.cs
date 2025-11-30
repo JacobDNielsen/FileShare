@@ -89,6 +89,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddScoped<IFileStorage, FileStorage>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -111,7 +121,7 @@ app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
 .    WithTags("RootRedirect");
 
 app.UseHttpsRedirection();
-
+app.UseCors();
 app.Run();
 
 //builder.Services.AddSwaggerGen();

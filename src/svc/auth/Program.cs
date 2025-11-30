@@ -42,6 +42,15 @@ builder.Services.AddAuthorization();
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -67,6 +76,7 @@ app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
     .WithTags("RootRedirect");
 
 app.UseHttpsRedirection();
+app.UseCors();
 
 app.UseAuthorization();
 
