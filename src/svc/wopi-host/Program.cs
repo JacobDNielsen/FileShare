@@ -93,6 +93,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
     // Base URL of your Storage service (set in appsettings.json or environment variable)
+    client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
+builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
+{
+    // Base URL of your Storage service (set in appsettings.json or environment variable)
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
 });
