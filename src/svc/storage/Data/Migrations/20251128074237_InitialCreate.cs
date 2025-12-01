@@ -20,7 +20,7 @@ namespace WopiHost.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FileId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     BaseFileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    OwnerId = table.Column<int>(type: "integer", nullable: true),
+                    OwnerId = table.Column<int>(type: "integer", nullable: false),
                     Size = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
