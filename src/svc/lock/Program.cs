@@ -87,6 +87,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 builder.Services.AddScoped<ILockManager, LockManager>();
+builder.Services.AddScoped<ILockRepository, LockRepository>();
 
 var app = builder.Build();
 
