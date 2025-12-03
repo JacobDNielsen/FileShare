@@ -12,5 +12,4 @@ public interface ILockRepository
 
        public Task<FileLock> Unlock(string file_id, CancellationToken ct);
 
-       public Task<FileLock> Delete(int lock_id, CancellationToken ct);
 }

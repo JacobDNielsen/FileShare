@@ -47,14 +47,4 @@ public class LockRepository : ILockRepository
 
         return existing;
     }
-
-    public async Task<FileLock?> Delete(int lock_id, CancellationToken ct)
-    {
-        var entity = await _dbContext.FileLocks.FirstOrDefaultAsync(f => f.Id == lock_id, ct);
-        if (entity == null) return null;
-
-        _dbContext.FileLocks.Remove(entity);
-        await _dbContext.SaveChangesAsync(ct);
-        return entity;
-    }
 }
