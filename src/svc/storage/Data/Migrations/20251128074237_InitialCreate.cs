@@ -20,6 +20,7 @@ namespace WopiHost.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FileId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     BaseFileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    OwnerId = table.Column<int>(type: "integer", nullable: false),
                     Size = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
@@ -28,23 +29,6 @@ namespace WopiHost.Data.Migrations
                 {
                     table.PrimaryKey("PK_metadata", x => x.Id);
                     table.UniqueConstraint("AK_metadata_FileId", x => x.FileId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "useraccounts",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserName = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    PasswordHash = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_useraccounts", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -81,18 +65,6 @@ namespace WopiHost.Data.Migrations
                 table: "metadata",
                 column: "FileId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_useraccounts_Email",
-                table: "useraccounts",
-                column: "Email",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_useraccounts_UserName",
-                table: "useraccounts",
-                column: "UserName",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -100,9 +72,6 @@ namespace WopiHost.Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "filelocks");
-
-            migrationBuilder.DropTable(
-                name: "useraccounts");
 
             migrationBuilder.DropTable(
                 name: "metadata");
