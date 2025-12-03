@@ -39,7 +39,7 @@ public sealed class WopiFilesController : ControllerBase
         return overrideVerb switch
         {
             "GET_LOCK" => await GetLock(file_id, ct),
-            "Lock" => await Lock(file_id, wopiLock, ct),
+            "LOCK" => await Lock(file_id, wopiLock, ct),
             "REFRESH_LOCk" => await RefreshLock(file_id, wopiLock, ct),
             "UNLOCK" => await Unlock(file_id, wopiLock, ct),
 
