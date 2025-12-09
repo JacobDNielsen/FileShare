@@ -24,6 +24,22 @@ public sealed class WopiFilesController : ControllerBase
         return File(stream, "application/octet-stream");
     }
 
+    [HttpPut("/wopi/files/{fileId}/contents")]
+    public async Task<IActionResult> PutFile(
+    string fileId,
+    CancellationToken ct)
+    {
+        var fileName = Request.Headers["X-File-Name"].ToString();
+        var sizeHeader = Request.Headers["X-File-Size"].ToString();
+
+        if (string.IsNullOrEmpty(fileName) || !long.TryParse(sizeHeader, out var size))
+            return BadRequest("Missing or invalid file metadata headers.");
+
+        await _fileService.OverwriteAsync(fileId, Request.Body, fileName, size, ct);
+        return NoContent(); // or Ok(updatedMetadata) if you prefer
+    }
+
+
     [HttpGet("{fileId}/urlBuilder")]
     public async Task<IActionResult> UrlBuilder([FromRoute] string fileId, CancellationToken ct)
     {

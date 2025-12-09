@@ -15,4 +15,26 @@ public sealed class StorageClient : IStorageClient
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadAsStreamAsync(ct);
     }
+
+    public async Task PutFileAsync(string fileId, Stream content, string fileName, long size, CancellationToken ct)
+    {
+        var req = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/wopi/files/{Uri.EscapeDataString(fileId)}/contents");
+
+        // Stream the bytes
+        req.Content = new StreamContent(content);
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        req.Content.Headers.ContentLength = size;
+
+        // Pass metadata needed by FileService.OverwriteAsync
+        // (Adapt header names to whatever your Storage API expects)
+        req.Headers.Add("X-File-Name", fileName);
+        req.Headers.Add("X-File-Size", size.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        resp.EnsureSuccessStatusCode();
+        // We don't care about the body here; Storage service will update metadata + bytes
+    }
+
 }
