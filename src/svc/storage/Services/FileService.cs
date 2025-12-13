@@ -7,6 +7,7 @@ using Storage.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Storage.FileStorage;
 using Storage.Helpers;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Storage.Services;
 
@@ -32,12 +33,13 @@ public class FileService : IFileService
     }
 
 
-    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, long size, CancellationToken ct)
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, int ownerId, long size, CancellationToken ct)
     {
         var metadata = new FileMetadata
         {
             BaseFileName = fileName,
             Size = size,
+            OwnerId = ownerId,
             CreatedAt = DateTimeOffset.UtcNow,
             LastModifiedAt = DateTimeOffset.UtcNow
         };

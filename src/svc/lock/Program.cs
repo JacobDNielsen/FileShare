@@ -1,15 +1,16 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-//using WopiHost.StorageClient;
+using System.ComponentModel;
+using Lock.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration.AddEnvironmentVariables();
+
+builder.Services.AddDbContext<WopiDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
@@ -51,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddSwaggerGen(s =>
 {
-    s.SwaggerDoc("v1", new OpenApiInfo { Title = "WopiHost API", Version = "v1" });
+    s.SwaggerDoc("v1", new OpenApiInfo { Title = "WOPI-Lock API", Version = "v1" });
     s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -78,41 +79,15 @@ builder.Services.AddSwaggerGen(s =>
 });
 
 builder.Services.AddAuthorization();
-// Add services to the container.
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null; //sørger for at vi skriver i Pascal-case til wopi client
-    });
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
 
 builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen();
 
-// Register the typed HttpClient for communicating with the Storage microservice
-builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
-{
-    // Base URL of your Storage service (set in appsettings.json or environment variable)
-    client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
+builder.Services.AddControllers();
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
-builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
-{
-    // Base URL of your Storage service (set in appsettings.json or environment variable)
-    client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ILockManager, LockManager>();
+builder.Services.AddScoped<ILockRepository, LockRepository>();
 
 var app = builder.Build();
 
@@ -123,13 +98,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
-    .WithTags("RootRedirect");
-
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseCors();
+
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+.    WithTags("RootRedirect");
+
+app.UseHttpsRedirection();
+
 app.Run();
