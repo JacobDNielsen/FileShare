@@ -6,7 +6,6 @@ public sealed class FileStorage : IFileStorage
 {
     private readonly string _root;
 
-    // Optional: allow DI config later. For now default to "Data/Files"
     public FileStorage(string? rootPath = null)
     {
         var basePath = rootPath is { Length: > 0 }
