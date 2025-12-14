@@ -1,49 +1,36 @@
-using System.Reflection.Metadata.Ecma335;
-
 public class LockClient : ILockClient
 {
-
     private readonly HttpClient _http;
 
     public LockClient(HttpClient http) => _http = http;
-    public async Task<GetLockResponse?> GetLockAsync(string fileId, CancellationToken ct)
+
+    public Task<HttpResponseMessage> GetLockAsync(string fileId, CancellationToken ct)
+        => _http.GetAsync($"wopi/locks/{Uri.EscapeDataString(fileId)}", ct);
+
+    public Task<HttpResponseMessage> LockAsync(string fileId, string lockValue, CancellationToken ct)
     {
-        
-        var result = await _http.GetAsync($"wopi/locks/{Uri.EscapeDataString(fileId)}", ct);
-        if(!result.IsSuccessStatusCode) 
-            return null;
-        return await result.Content.ReadFromJsonAsync<GetLockResponse>(cancellationToken: ct);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"wopi/locks/{Uri.EscapeDataString(fileId)}");
+        request.Headers.Add("X-WOPI-Lock", lockValue);
+        return _http.SendAsync(request, ct);
     }
 
-    public async Task<LockResponse> SetLockAsync(string fileId, LockRequest dto, CancellationToken ct)
+    public Task<HttpResponseMessage> RefreshLockAsync(string fileId, string lockValue, CancellationToken ct)
     {
-        var result = await _http.PostAsJsonAsync($"wopi/locks/{Uri.EscapeDataString(fileId)}", dto, ct);
-        if(!result.IsSuccessStatusCode)
-            return new LockResponse{Success = false};
-        return await result.Content.ReadFromJsonAsync<LockResponse>(cancellationToken: ct)
-            ?? new LockResponse{Success = false};  
+        var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"wopi/locks/{Uri.EscapeDataString(fileId)}/refresh");
+
+        request.Headers.Add("X-WOPI-Lock", lockValue);
+        return _http.SendAsync(request, ct);
     }
 
-    public async Task<LockResponse> UnlockAsync(string fileId, LockRequest dto, CancellationToken ct)
+    public Task<HttpResponseMessage> UnlockAsync(string fileId, string lockValue, CancellationToken ct)
     {
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"wopi/locks/{Uri.EscapeDataString(fileId)}")
-        {
-          Content = JsonContent.Create(dto)  
-        };
-        var result = await _http.SendAsync(request, ct);
-        if(!result.IsSuccessStatusCode)
-            return new LockResponse{Success = false};
-        return await result.Content.ReadFromJsonAsync<LockResponse>(cancellationToken: ct)
-            ?? new LockResponse{Success = false};
+        var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"wopi/locks/{Uri.EscapeDataString(fileId)}");
 
-    }
-
-    public async Task<LockResponse> RefreshLockAsync(string fileId, LockRequest dto, CancellationToken ct)
-    {
-        var result = await _http.PostAsJsonAsync($"wopi/locks/{Uri.EscapeDataString(fileId)}/refresh", dto, ct);
-        if(!result.IsSuccessStatusCode)
-            return new LockResponse{Success = false};
-        return await result.Content.ReadFromJsonAsync<LockResponse>(cancellationToken: ct)
-            ?? new LockResponse{Success = false};
+        request.Headers.Add("X-WOPI-Lock", lockValue);
+        return _http.SendAsync(request, ct);
     }
 }
