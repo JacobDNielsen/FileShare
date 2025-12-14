@@ -40,7 +40,7 @@ public sealed class WopiFilesController : ControllerBase
         {
             "GET_LOCK" => await GetLock(file_id, ct),
             "LOCK" => await Lock(file_id, wopiLock, ct),
-            "REFRESH_LOCk" => await RefreshLock(file_id, wopiLock, ct),
+            "REFRESH_LOCK" => await RefreshLock(file_id, wopiLock, ct),
             "UNLOCK" => await Unlock(file_id, wopiLock, ct),
 
             _ => BadRequest("Unknown WOPI operation")
@@ -48,116 +48,77 @@ public sealed class WopiFilesController : ControllerBase
         };
     }
 
-       private async Task<IActionResult> GetLock(string file_id, CancellationToken ct)
+    private async Task<IActionResult> GetLock(string file_id, CancellationToken ct)
     {
-        var result = await _lock.GetLockAsync(file_id, ct);
-       
-        //even if the lock is null status code 200 should still be returned
-        Response.Headers["X-WOPI-Lock"] = result.LockValue ?? string.Empty;
+        var response = await _lock.GetLockAsync(file_id, ct);
+
+        Response.Headers["X-WOPI-Lock"] = response.Headers.Contains("X-WOPI-Lock")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-Lock"))
+            : string.Empty;
 
         return Ok();
     }
 
-    private async Task<IActionResult> Lock(string file_id, string newLock, CancellationToken ct)
+    private async Task<IActionResult> Lock(string file_id, string lockValue, CancellationToken ct)
     {
-        var existingLock = await _lock.GetLockAsync(file_id, ct);
-        var existingVaule = existingLock?.LockValue;
+        var response = await _lock.LockAsync(file_id, lockValue, ct);
 
-        if(existingLock == null)
+        if (response.IsSuccessStatusCode)
         {
-            
-            var result = await _lock.SetLockAsync(file_id, new LockRequest{LockValue = newLock}, ct);
-            if(result.Success)
-                return Ok();
-
-            //race: fetch existing and return conflict
-            Response.Headers["X-WOPI-LOCK"] = result.ExistingLock ?? string.Empty;
-            return Conflict();
-            
+            Response.Headers["X-WOPI-Lock"] = lockValue;
+            return Ok();
         }
 
-        if(existingVaule != newLock){
-            Response.Headers["X-WOPI-LOCK"] = existingVaule;
-            return Conflict();
+        Response.Headers["X-WOPI-Lock"] = response.Headers.Contains("X-WOPI-Lock")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-Lock"))
+            : string.Empty;
+
+        Response.Headers["X-WOPI-LockFailureReason"] = response.Headers.Contains("X-WOPI-LockFailureReason")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-LockFailureReason"))
+            : "Lock conflict";
+
+        return Conflict();
+    }
+
+    private async Task<IActionResult> RefreshLock(string file_id, string lockValue, CancellationToken ct)
+    {
+        var response = await _lock.RefreshLockAsync(file_id, lockValue, ct);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Response.Headers["X-WOPI-Lock"] = lockValue;
+            return Ok();
         }
 
-        return Ok();
-    }
+        Response.Headers["X-WOPI-Lock"] = response.Headers.Contains("X-WOPI-Lock")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-Lock"))
+            : string.Empty;
 
-    private async Task<IActionResult> RefreshLock(string file_id, string newLock, CancellationToken ct)
-    {
-        var existingLock = await _lock.GetLockAsync(file_id, ct);
-        var existingValue = existingLock?.LockValue;
+        Response.Headers["X-WOPI-LockFailureReason"] = response.Headers.Contains("X-WOPI-LockFailureReason")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-LockFailureReason"))
+            : "Lock conflict";
 
-    if (existingLock == null)
-    {
-        Response.Headers["X-WOPI-Lock"] = string.Empty;
         return Conflict();
     }
 
-   
-    if (existingValue != newLock)
+    private async Task<IActionResult> Unlock(string file_id, string lockValue, CancellationToken ct)
     {
-        Response.Headers["X-WOPI-Lock"] = existingValue ?? string.Empty;
+        var response = await _lock.UnlockAsync(file_id, lockValue, ct);
+
+        if (response.IsSuccessStatusCode)
+            return Ok();
+
+        Response.Headers["X-WOPI-Lock"] = response.Headers.Contains("X-WOPI-Lock")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-Lock"))
+            : string.Empty;
+
+        Response.Headers["X-WOPI-LockFailureReason"] = response.Headers.Contains("X-WOPI-LockFailureReason")
+            ? string.Join(",", response.Headers.GetValues("X-WOPI-LockFailureReason"))
+            : "Lock conflict";
+
         return Conflict();
     }
 
-
-    var result = await _lock.RefreshLockAsync(file_id,
-        new LockRequest { LockValue = newLock }, ct);
-
-    if (result.Success)
-    {
-       
-        Response.Headers["X-WOPI-Lock"] = newLock;
-        return Ok();
-    }
-
-    var raceExisting = await _lock.GetLockAsync(file_id, ct);
-    Response.Headers["X-WOPI-Lock"] = raceExisting?.LockValue ?? string.Empty;
-    return Conflict();
-}
-
-    
-
-    private async Task<IActionResult> Unlock(string file_id, string file_lock, CancellationToken ct)
-    {
-       var existingLock = await _lock.GetLockAsync(file_id, ct);
-        var existingValue = existingLock?.LockValue; 
-
-            // CASE 1: No lock exists -> Unlock must fail
-    if (existingLock == null)
-    {
-        Response.Headers["X-WOPI-Lock"] = string.Empty;
-        return Conflict();
-    }
-
-   
-    if (existingValue != file_lock)
-    {
-        Response.Headers["X-WOPI-Lock"] = existingValue ?? string.Empty;
-        return Conflict();
-    }
-
-   
-    var result = await _lock.UnlockAsync(
-        file_id,
-        new LockRequest { LockValue = file_lock },
-        ct);
-
-    if (result.Success)
-    {
-        return Ok();
-    }
-
-
-    var raceExisting = await _lock.GetLockAsync(file_id, ct);
-    Response.Headers["X-WOPI-Lock"] = raceExisting?.LockValue ?? string.Empty;
-
-    return Conflict();
-}
-
-    
 
 [HttpGet("{id}/urlBuilder")]
 public async Task<IActionResult> UrlBuilder([FromRoute] string id)
