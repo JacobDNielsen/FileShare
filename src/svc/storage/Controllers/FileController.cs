@@ -73,7 +73,6 @@ public class FileController : ControllerBase
         if (fileRequest?.File is null)
             return BadRequest("No file in request :')");
         var formFile = fileRequest.File;
-        var test = token.Substring("Bearer ".Length);
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(test);
         var sub = jwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
@@ -89,7 +88,7 @@ public class FileController : ControllerBase
             return BadRequest("Could'nt parse OwnerId: "+sub);
         }
 
-        int ownerId = Convert.ToInt32(sub); //evt lav try catch/ try parse her
+        int ownerId = Convert.ToInt32(sub); 
         
         await using var stream = formFile.OpenReadStream();
 
