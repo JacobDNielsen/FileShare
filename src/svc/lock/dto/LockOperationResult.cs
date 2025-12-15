@@ -1,4 +1,4 @@
-public class LockOperationResult
+public sealed record LockOperationResult
 {
         /// <summary>
         /// Indicates whether the lock operation succeeded.
