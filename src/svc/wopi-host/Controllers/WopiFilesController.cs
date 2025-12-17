@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using WopiHost.Dto;
+using System.Security.Principal;
 
 [ApiController]
 [Authorize]
@@ -16,8 +17,8 @@ public sealed class WopiFilesController : ControllerBase
     }
 
     // WOPI: CheckFileInfo proxy
-    [HttpGet]
-    public async Task<IActionResult> CheckFileInfo(string id, CancellationToken ct)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> CheckFileInfo([FromRoute] string id, CancellationToken ct)
     {
         var info = await _storage.CheckFileInfoAsync(id, ct);
         return info is null ? NotFound() : Ok(info);
@@ -27,6 +28,7 @@ public sealed class WopiFilesController : ControllerBase
     [HttpGet("{file_id}/contents")]
     public async Task<IActionResult> GetFile(string file_id, CancellationToken ct)
     {
+
         var stream = await _storage.GetFile(file_id, ct);
         return File(stream, "application/octet-stream");
     }
@@ -125,7 +127,26 @@ public sealed class WopiFilesController : ControllerBase
 [HttpGet("{id}/urlBuilder")]
 public async Task<IActionResult> UrlBuilder([FromRoute] string id)
     {
-        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{id}&access_token=securetoken";
+
+       // var authHeader = Request.Headers.Authorization.ToString();
+        string? ExtractJwt(HttpRequest request)
+        {
+            var auth = request.Headers.Authorization.ToString();
+            if (!string.IsNullOrEmpty(auth) && auth.StartsWith("Bearer "))
+                return auth["Bearer ".Length..];
+
+            if (request.Query.TryGetValue("access_token", out var token))
+                return token.ToString();
+
+            return null;
+        }
+        string? jwt = ExtractJwt(Request);
+
+        if (string.IsNullOrEmpty(jwt))
+        {
+            throw new Exception ("token er:" + jwt);
+        }        
+        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{id}&access_token={jwt}";
         return Ok(url);
     }
 }

@@ -58,8 +58,8 @@ public class FileController : ControllerBase
         {
             BaseFileName = metadata.BaseFileName,
             Size = metadata.Size,
-            OwnerId = 1,
-            //UserId = "user",
+            OwnerId = "1",
+            UserId = "user",
             Version = metadata.LastModifiedAt.Ticks.ToString(),
             UserCanWrite = true
         };
