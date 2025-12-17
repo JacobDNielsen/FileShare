@@ -33,13 +33,12 @@ public class FileService : IFileService
     }
 
 
-    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, int ownerId, long size, CancellationToken ct)
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, /*int ownerId,*/ long size, CancellationToken ct)
     {
         var metadata = new FileMetadata
         {
             BaseFileName = fileName,
             Size = size,
-            OwnerId = ownerId,
             CreatedAt = DateTimeOffset.UtcNow,
             LastModifiedAt = DateTimeOffset.UtcNow
         };

@@ -21,7 +21,7 @@ public class WopiDbContext : DbContext
             e.HasIndex(f => f.FileId).IsUnique(); //sørger for at FileId er unik og laver et index på den
             e.Property(f => f.BaseFileName).HasMaxLength(255).IsRequired();
             e.Property(f => f.FileId).HasMaxLength(255).IsRequired();
-            e.Property(f => f.OwnerId).IsRequired();
+            //e.Property(f => f.OwnerId).IsRequired();
             
         });
 

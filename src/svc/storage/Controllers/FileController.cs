@@ -58,8 +58,8 @@ public class FileController : ControllerBase
         {
             BaseFileName = metadata.BaseFileName,
             Size = metadata.Size,
-            OwnerId = metadata.OwnerId,
-            //UserId = "",
+            OwnerId = "1",
+            UserId = "user",
             Version = metadata.LastModifiedAt.Ticks.ToString(),
             UserCanWrite = true
         };
@@ -74,7 +74,8 @@ public class FileController : ControllerBase
             return BadRequest("No file in request :')");
         var formFile = fileRequest.File;
         var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(test);
+        //var jwt = handler.ReadJwtToken(token);
+        /*
         var sub = jwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
         if (string.IsNullOrWhiteSpace(sub))
@@ -89,10 +90,10 @@ public class FileController : ControllerBase
         }
 
         int ownerId = Convert.ToInt32(sub); 
-        
+     */   
         await using var stream = formFile.OpenReadStream();
 
-        var metadata = await _fileService.UploadAsync(stream, formFile.FileName, ownerId, formFile.Length, ct);
+        var metadata = await _fileService.UploadAsync(stream, formFile.FileName, formFile.Length, ct);
 
         return CreatedAtAction(
             nameof(CheckFileInfo),
