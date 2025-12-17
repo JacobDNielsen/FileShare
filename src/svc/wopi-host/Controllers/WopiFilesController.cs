@@ -123,7 +123,7 @@ public sealed class WopiFilesController : ControllerBase
 [HttpGet("{id}/urlBuilder")]
 public async Task<IActionResult> UrlBuilder([FromRoute] string id)
     {
-        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{id}&acess_token=securetoken";
+        var url = $"http://localhost:9980/browser/123abc/cool.html?WOPISrc=http://host.docker.internal:5018/wopi/files/{id}&access_token=securetoken";
         return Ok(url);
     }
 }
