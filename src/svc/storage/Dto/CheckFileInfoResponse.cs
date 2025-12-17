@@ -3,8 +3,8 @@ public class CheckFileInfoResponse
 {
     public string BaseFileName { get; set; } = null!;
     public long Size { get; set; }
-    public string OwnerId { get; set; } = "user";
-    public string UserId { get; set; } = "user";
-    public string Version { get; set; } = "1";
-    public bool UserCanWrite { get; set; } = true;
+    public int? OwnerId { get; set; } = null!;
+    public int UserId { get; set; } = default!;
+    public string Version { get; set; } = null!;
+    public bool UserCanWrite { get; set; } = false;
 }
