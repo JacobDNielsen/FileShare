@@ -1,6 +1,20 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+  using Ocelot.DependencyInjection;
+  using Ocelot.Middleware;
 
-app.MapGet("/", () => "Hello World!");
+  var builder = WebApplication.CreateBuilder(args);
 
-app.Run();
+  //Ocelot configuration
+  builder.Configuration
+      .SetBasePath(builder.Environment.ContentRootPath)
+      .AddOcelot(); // is using single ocelot.json, using read-only mode
+  builder.Services
+      .AddOcelot(builder.Configuration);
+
+  if (builder.Environment.IsDevelopment())
+  {
+      builder.Logging.AddConsole();
+  }
+
+  var app = builder.Build();
+  await app.UseOcelot();
+  await app.RunAsync();
