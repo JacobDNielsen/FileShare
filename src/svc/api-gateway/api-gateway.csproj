@@ -7,4 +7,8 @@
     <RootNamespace>api_gateway</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Ocelot" Version="24.1.0" />
+  </ItemGroup>
+
 </Project>
