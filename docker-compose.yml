@@ -1,0 +1,63 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: fileshare_db
+      POSTGRES_USER: fileshare_user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+    - "5432:5432"
+    # (Optional) healthcheck to ensure DB is ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fileshare_user -d fileshare_db"]
+      interval: 5s 
+      timeout: 2s
+      retries: 5
+
+  auth:
+    volumes:
+    - ./auth_private.pem:/app/auth_private.pem:ro
+    build:
+      context: ./src/svc/auth
+      dockerfile: Dockerfile
+    ports:
+    - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Connection string for Auth DB (sentinel example):
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=fileshare_db;Username=fileshare_user;Password=password
+    # (See **Auth JWT config** below)
+      - Authentication__Jwt__Issuer=http://localhost:5001
+      - Authentication__Jwt__Audience=fileshare
+      - Authentication__Jwt__LatestKeyId=key1
+      - Authentication__Jwt__ExpiresMinutes=60
+
+      
+      - Authentication__Jwt__SigningKeys__0__KeyId=key1
+      - Authentication__Jwt__SigningKeys__0__PrivateKey="test123"
+      - Authentication__Jwt__SigningKeys__0__PrivateKey__File=auth_private.pem
+    depends_on:
+    - db
+
+
+  lock:
+    build:
+      context: ./src/svc/lock
+      dockerfile: Dockerfile
+    ports:
+    - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=fileshare_db;Username=fileshare_user;Password=password
+      - Authentication__Jwt__Issuer=http://localhost:5001
+      - Authentication__Jwt__Audience=fileshare
+    depends_on:
+      - db
+      - auth
+
+volumes:
+  postgres_data:
