@@ -18,6 +18,7 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
 builder.Services.AddOptions<JwtConfig>()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
@@ -59,6 +60,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+//tilføjet
+using (var scope = app.Services.CreateScope())
+{
+var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
