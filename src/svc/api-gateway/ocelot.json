@@ -38,14 +38,7 @@
     {
       "Key": "storage-api-root",
       "UpstreamPathTemplate": "/api/storage",
-      "UpstreamHttpMethod": [
-        "GET",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-        "OPTIONS"
-      ],
+      "UpstreamHttpMethod": ["GET", "OPTIONS"],
       "DownstreamPathTemplate": "/wopi/files",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5134 }],
@@ -61,15 +54,6 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5038 }],
       "Priority": 20
     },
-    {
-      "Key": "lock-api-root",
-      "UpstreamPathTemplate": "/api/lock",
-      "UpstreamHttpMethod": ["GET", "POST", "DELETE", "OPTIONS"],
-      "DownstreamPathTemplate": "/wopi/locks",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5038 }],
-      "Priority": 21
-    },
 
     {
       "Key": "wopi-host-standard",
@@ -80,15 +64,6 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5018 }],
       "Priority": 30
     },
-    {
-      "Key": "wopi-host-standard-root",
-      "UpstreamPathTemplate": "/wopi/files",
-      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
-      "DownstreamPathTemplate": "/wopi/files",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5018 }],
-      "Priority": 31
-    },
 
     {
       "Key": "wopi-host-alias",
@@ -98,15 +73,6 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5018 }],
       "Priority": 10
-    },
-    {
-      "Key": "wopi-host-alias-root",
-      "UpstreamPathTemplate": "/api/wopi",
-      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
-      "DownstreamPathTemplate": "/wopi/files",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5018 }],
-      "Priority": 11
     }
   ],
   "GlobalConfiguration": {
