@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>api_gateway_yarp</RootNamespace>
+    <RootNamespace>ApiGatewayYarp</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
