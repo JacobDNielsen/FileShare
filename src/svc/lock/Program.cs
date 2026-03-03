@@ -94,8 +94,22 @@ var app = builder.Build();
 //tilføjet
 using (var scope = app.Services.CreateScope())
 {
-var db = scope.ServiceProvider.GetRequiredService<WopiDbContext>();
-db.Database.Migrate();
+    var db = scope.ServiceProvider.GetRequiredService<WopiDbContext>();
+
+    var retries = 10;
+    while (retries > 0)
+    {
+        try
+        {
+            db.Database.Migrate();
+            break;
+        }
+        catch
+        {
+            retries--;
+            Thread.Sleep(5000);
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
