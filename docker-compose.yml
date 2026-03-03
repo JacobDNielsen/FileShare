@@ -36,6 +36,7 @@ services:
       - Authentication__Jwt__LatestKeyId=key1
       - Authentication__Jwt__ExpiresMinutes=60
       - Authentication__Jwt__SigningKeys__0__KeyId=key1
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fileshare_user -d auth_db"]
       interval: 5s
@@ -67,6 +68,13 @@ services:
       - ConnectionStrings__DefaultConnection=Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password
       - Authentication__Jwt__Issuer=http://localhost:5001
       - Authentication__Jwt__Audience=fileshare
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fileshare_user -d lock_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
     depends_on:
       - lock-db
       - auth
