@@ -1,10 +1,9 @@
 version: "3.9"
 
 services:
-
-#---------------------------------------------------------------
-# Auth Service
-#---------------------------------------------------------------
+  #---------------------------------------------------------------
+  # Auth Service
+  #---------------------------------------------------------------
 
   auth-db:
     image: postgres:16.4-alpine
@@ -17,23 +16,21 @@ services:
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fileshare_user -d auth_db"]
-      interval: 5s 
+      interval: 5s
       timeout: 2s
       retries: 5
 
   auth:
     volumes:
-    - ./kid1.pem:/run/secrets/auth-jwt-key:ro
+      - ./kid1.pem:/run/secrets/auth-jwt-key:ro
     build:
       context: ./src/svc/auth
       dockerfile: Dockerfile
     ports:
-    - "5039:8080"
+      - "5039:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      # Connection string for Auth DB (sentinel example):
       - ConnectionStrings__DefaultConnection=Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password
-    # (See **Auth JWT config** below)
       - Authentication__Jwt__Issuer=http://localhost:5001
       - Authentication__Jwt__Audience=fileshare
       - Authentication__Jwt__LatestKeyId=key1
@@ -41,13 +38,11 @@ services:
       - Authentication__Jwt__SigningKeys__0__KeyId=key1
 
     depends_on:
-    - auth-db
+      - auth-db
 
-
-
-#---------------------------------------------------------------
-# Storage Service
-#---------------------------------------------------------------
+  #---------------------------------------------------------------
+  # Storage Service
+  #---------------------------------------------------------------
 
   storage-db:
     image: postgres:15-alpine
@@ -69,7 +64,7 @@ services:
       context: ./src/svc/storage
       dockerfile: Dockerfile
     ports:
-    - "5134:8080"
+      - "5134:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password
@@ -80,11 +75,9 @@ services:
       - storage-db
       - auth
 
-
-
-#---------------------------------------------------------------
-# Lock Service
-#---------------------------------------------------------------
+  #---------------------------------------------------------------
+  # Lock Service
+  #---------------------------------------------------------------
 
   lock-db:
     image: postgres:15-alpine
@@ -106,7 +99,7 @@ services:
       context: ./src/svc/lock
       dockerfile: Dockerfile
     ports:
-    - "5038:8080"
+      - "5038:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password
@@ -117,17 +110,16 @@ services:
       - lock-db
       - auth
 
+  #---------------------------------------------------------------
+  # WOPI Host
+  #---------------------------------------------------------------
 
-#---------------------------------------------------------------
-# WOPI Host
-#---------------------------------------------------------------
-  
   wopi-host:
     build:
       context: ./src/svc/wopi-host
       dockerfile: Dockerfile
     ports:
-    - "5018:8080"
+      - "5018:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Authentication__Jwt__Issuer=http://localhost:5001
