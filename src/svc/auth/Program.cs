@@ -18,6 +18,14 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+var keyPath = "/run/secrets/auth-jwt-key";
+
+if (File.Exists(keyPath))
+{
+    var key = File.ReadAllText(keyPath);
+    builder.Configuration["Authentication:Jwt:SigningKeys:0:PrivateKey"] = key;
+}
+
 builder.Services.AddOptions<JwtConfig>()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
@@ -59,6 +67,26 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+
+    var retries = 10;
+    while (retries > 0)
+    {
+        try
+        {
+            db.Database.Migrate();
+            break;
+        }
+        catch
+        {
+            retries--;
+            Thread.Sleep(5000);
+        }
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
