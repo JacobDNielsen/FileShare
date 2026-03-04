@@ -68,7 +68,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password
-      - Authentication__Jwt__Issuer=http://localhost:5134
+      - Authentication__Jwt__Issuer=http://localhost:5039
       - Authentication__Jwt__Audience=fileshare
 
     depends_on:
