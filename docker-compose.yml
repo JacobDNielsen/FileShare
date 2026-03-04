@@ -1,5 +1,15 @@
 version: "3.9"
 
+x-aspnet-https-env: &aspnet-https-env
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+  ASPNETCORE_HTTPS_PORTS: "8443"
+  ASPNETCORE_Kestrel__Certificates__Default__Path: /https/fileshare-dev.pfx
+  ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
+
+x-https-volume: &https-volume
+  - ./.dev-certs/https:/https:ro
+
 services:
   #---------------------------------------------------------------
   # Auth Service
@@ -13,7 +23,6 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - auth_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fileshare_user -d auth_db"]
       interval: 5s
@@ -23,20 +32,21 @@ services:
   auth:
     volumes:
       - ./kid1.pem:/run/secrets/auth-jwt-key:ro
+      - ./.dev-certs/https:/https:ro
     build:
       context: ./src/svc/auth
       dockerfile: Dockerfile
     ports:
-      - "5039:8080"
+      - "5039:8080" # HTTP
+      - "5040:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password
-      - Authentication__Jwt__Issuer=http://localhost:5039
-      - Authentication__Jwt__Audience=fileshare
-      - Authentication__Jwt__LatestKeyId=key1
-      - Authentication__Jwt__ExpiresMinutes=60
-      - Authentication__Jwt__SigningKeys__0__KeyId=key1
-
+      <<: *aspnet-https-env
+      ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
+      Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Audience: "fileshare"
+      Authentication__Jwt__LatestKeyId: "key1"
+      Authentication__Jwt__ExpiresMinutes: "60"
+      Authentication__Jwt__SigningKeys__0__KeyId: "key1"
     depends_on:
       - auth-db
 
@@ -52,7 +62,6 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - storage_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fileshare_user -d storage_db"]
       interval: 5s
@@ -64,13 +73,15 @@ services:
       context: ./src/svc/storage
       dockerfile: Dockerfile
     ports:
-      - "5134:8080"
+      - "5134:8080" # HTTP
+      - "5135:8443" # HTTPS (client -> service)
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password
-      - Authentication__Jwt__Issuer=http://localhost:5039
-      - Authentication__Jwt__Audience=fileshare
+      <<: *aspnet-https-env
+      ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
+      Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Audience: "fileshare"
 
+    volumes: *https-volume
     depends_on:
       - storage-db
       - auth
@@ -87,7 +98,6 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - lock_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fileshare_user -d lock_db"]
       interval: 5s
@@ -99,13 +109,15 @@ services:
       context: ./src/svc/lock
       dockerfile: Dockerfile
     ports:
-      - "5038:8080"
+      - "5038:8080" # HTTP
+      - "5037:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password
-      - Authentication__Jwt__Issuer=http://localhost:5039
-      - Authentication__Jwt__Audience=fileshare
+      <<: *aspnet-https-env
+      ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
+      Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Audience: "fileshare"
 
+    volumes: *https-volume
     depends_on:
       - lock-db
       - auth
@@ -119,12 +131,14 @@ services:
       context: ./src/svc/wopi-host
       dockerfile: Dockerfile
     ports:
-      - "5018:8080"
+      - "5018:8080" # HTTP
+      - "5019:8443" # HTTPS (client -> service)
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Authentication__Jwt__Issuer=http://localhost:5039
-      - Authentication__Jwt__Audience=fileshare
+      <<: *aspnet-https-env
+      Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Audience: "fileshare"
 
+    volumes: *https-volume
     depends_on:
       - auth
 
