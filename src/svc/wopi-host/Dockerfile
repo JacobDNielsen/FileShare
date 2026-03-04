@@ -6,10 +6,10 @@ WORKDIR /app
 COPY *.csproj ./
 RUN dotnet restore
 COPY . ./
-RUN dotnet publish ./Wopihost.csproj -c Release -o /app/out
+RUN dotnet publish ./WopiHost.csproj -c Release -o /app/out
 # STEP 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app/out ./
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Wopijost.dll"]
+ENTRYPOINT ["dotnet", "WopiHost.dll"]
