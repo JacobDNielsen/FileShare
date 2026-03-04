@@ -68,7 +68,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-//tilføjet
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
