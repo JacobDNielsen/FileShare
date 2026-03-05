@@ -1,15 +1,28 @@
-FROM nginx:alpine
-RUN apk add --no-cache curl
-# STEP 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+#Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS base
 WORKDIR /app
-COPY *.csproj ./
-RUN dotnet restore
-COPY . ./
-RUN dotnet publish -c Release -o /app/out
-# STEP 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /app
-COPY --from=build /app/out ./
 EXPOSE 8080
+EXPOSE 8443
+
+# Build image
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Build context, from docker-compose (.src/svc/auth)
+COPY ["Auth.csproj", "."]
+RUN dotnet restore
+
+COPY . .
+RUN dotnet build -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish Image
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish ./
+
 ENTRYPOINT ["dotnet", "Auth.dll"]
