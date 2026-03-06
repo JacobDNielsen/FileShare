@@ -2,6 +2,23 @@ version: "3.9"
 
 services:
   #---------------------------------------------------------------
+  # API Gateway - Yarp
+  #---------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./src/svc/api-gateway-yarp
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8080"   # host:container
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - auth
+      - storage
+      - lock
+      - wopi-host
+
+  #---------------------------------------------------------------
   # Auth Service
   #---------------------------------------------------------------
 
@@ -26,8 +43,6 @@ services:
     build:
       context: ./src/svc/auth
       dockerfile: Dockerfile
-    ports:
-      - "5039:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password
@@ -63,8 +78,6 @@ services:
     build:
       context: ./src/svc/storage
       dockerfile: Dockerfile
-    ports:
-      - "5134:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password
@@ -98,8 +111,6 @@ services:
     build:
       context: ./src/svc/lock
       dockerfile: Dockerfile
-    ports:
-      - "5038:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password
@@ -118,8 +129,6 @@ services:
     build:
       context: ./src/svc/wopi-host
       dockerfile: Dockerfile
-    ports:
-      - "5018:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Authentication__Jwt__Issuer=http://localhost:5039
