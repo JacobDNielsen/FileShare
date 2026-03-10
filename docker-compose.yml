@@ -8,6 +8,23 @@ x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 
 services:
   #---------------------------------------------------------------
+  # API Gateway - Yarp
+  #---------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./src/svc/api-gateway-yarp
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8080"   # host:container
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - auth
+      - storage
+      - lock
+      - wopi-host
+
+  #---------------------------------------------------------------
   # Auth Service
   #---------------------------------------------------------------
 
