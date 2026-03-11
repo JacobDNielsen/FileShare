@@ -27,9 +27,7 @@ mkcert -cert-file .\.dev-certs\pem\fileshare-dev.crt -key-file .\.dev-certs\pem\
 
 # Convert them to .pfx, for ASP.NET Core Kestrel support (This requires OpenSSL):
 
-openssl pkcs12 -export `  -out .\.dev-certs\pfx\fileshare-dev.pfx`
-  -inkey .\.dev-certs\pem\fileshare-dev.key `  -in .\.dev-certs\pem\fileshare-dev.crt`
-  -password pass:verysecurepassword
+openssl pkcs12 -export -out .\.dev-certs\pfx\fileshare-dev.pfx -inkey .\.dev-certs\pem\fileshare-dev.key -in .\.dev-certs\pem\fileshare-dev.crt -password pass:verysecurepassword
 
 # Copy mkcert root CA for container trust (not yet supported)
 
