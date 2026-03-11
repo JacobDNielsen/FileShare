@@ -98,12 +98,14 @@ if (app.Environment.IsDevelopment())
         return Results.Json(config.GetSection("Authentication").AsEnumerable());
     })
     .WithTags("DebugAuthConfiguration");
+} else
+{
+    app.UseHttpsRedirection();
 }
 
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
     .WithTags("RootRedirect");
 
-app.UseHttpsRedirection();
 app.UseCors();
 
 app.UseAuthorization();
