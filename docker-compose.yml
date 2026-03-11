@@ -57,9 +57,9 @@ services:
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "https://localhost:5040"
       Authentication__Jwt__Audience: "fileshare"
-      Authentication__Jwt__LatestKeyId: "key1"
+      Authentication__Jwt__LatestKeyId: "kid-1"
       Authentication__Jwt__ExpiresMinutes: "60"
-      Authentication__Jwt__SigningKeys__0__KeyId: "key1"
+      Authentication__Jwt__SigningKeys__0__KeyId: "kid-1"
     depends_on:
       - auth-db
 
