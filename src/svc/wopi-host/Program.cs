@@ -121,12 +121,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+} else
+{
+    app.UseHttpsRedirection();
 }
 
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
     .WithTags("RootRedirect");
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
