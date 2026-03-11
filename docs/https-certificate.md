@@ -23,9 +23,7 @@ New-Item -ItemType Directory -Force .\.dev-certs\ca | Out-Null
 
 # Certificate and key generation (PEM), used for localhost + docker:
 
-mkcert `  -cert-file .\.dev-certs\pem\fileshare-dev.crt`
-  -key-file .\.dev-certs\pem\fileshare-dev.key `
-  localhost 127.0.0.1 ::1 auth storage lock wopi-host
+mkcert -cert-file .\.dev-certs\pem\fileshare-dev.crt -key-file .\.dev-certs\pem\fileshare-dev.key localhost 127.0.0.1 ::1 auth storage lock wopi-host
 
 # Convert them to .pfx, for ASP.NET Core Kestrel support (This requires OpenSSL):
 
