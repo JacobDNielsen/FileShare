@@ -55,7 +55,8 @@ services:
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
-      Authentication__Jwt__Issuer: "https://localhost:5040"
+      #Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Issuer: "http://auth:8080"
       Authentication__Jwt__Audience: "fileshare"
       Authentication__Jwt__LatestKeyId: "kid-1"
       Authentication__Jwt__ExpiresMinutes: "60"
@@ -91,7 +92,8 @@ services:
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
-      Authentication__Jwt__Issuer: "https://localhost:5040"
+      #Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Issuer: "http://auth:8080"
       Authentication__Jwt__Audience: "fileshare"
 
     volumes:
@@ -128,7 +130,8 @@ services:
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
-      Authentication__Jwt__Issuer: "https://localhost:5040"
+      #Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Issuer: "http://auth:8080"
       Authentication__Jwt__Audience: "fileshare"
 
     volumes:
@@ -150,7 +153,8 @@ services:
       - "5019:8443" # HTTPS (client -> service)
     environment:
       <<: *aspnet-https-env
-      Authentication__Jwt__Issuer: "https://localhost:5040"
+      #Authentication__Jwt__Issuer: "https://localhost:5040"
+      Authentication__Jwt__Issuer: "http://auth:8080"
       Authentication__Jwt__Audience: "fileshare"
 
     volumes:

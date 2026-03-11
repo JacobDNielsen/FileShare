@@ -84,7 +84,7 @@ builder.Services.AddSwaggerGen(s =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -105,6 +105,12 @@ builder.Services.AddScoped<IFileService, FileService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<WopiDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -115,6 +121,8 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseCors();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -123,7 +131,7 @@ app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
 .    WithTags("RootRedirect");
 
-app.UseCors();
+
 app.Run();
 
 //builder.Services.AddSwaggerGen();
