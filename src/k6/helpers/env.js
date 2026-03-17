@@ -1,22 +1,18 @@
-export function getEnvVariable(
-  variableName,
-  { required = false, fallback = undefined } = {},
-) {
+export function getEnvVariable(variableName, options = {}) {
+  const { required = false, fallback } = options;
   const value = __ENV[variableName];
 
-  if (
-    (value === undefined || value === "") &&
-    required &&
-    fallback === undefined
-  ) {
-    throw new Error(
-      `Environment variable '${variableName}' is required but not set`,
-    );
+  if (value !== undefined && value !== null && value !== "") {
+    return value;
   }
 
-  if (value === undefined || value === "") {
+  if (fallback !== undefined) {
     return fallback;
   }
 
-  return value;
+  if (required) {
+    throw new Error(`Missing required env variable: ${variableName}`);
+  }
+
+  return undefined;
 }
