@@ -1,3 +1,5 @@
+import { getEnvVariable } from "./env.js";
+
 export function scenarioOption(scenarioName) {
   const scenarios = {
     stress: {
@@ -34,8 +36,12 @@ export function scenarioOption(scenarioName) {
     );
   }
 
+  const INSECURE_SKIP_TLS_VERIFY =
+    getEnvVariable("INSECURE_SKIP_TLS_VERIFY", { fallback: "false" }) ===
+    "true";
+
   return {
-    insecureSkipTLSVerify: true, // skip TLS verification, for testing with self-signed certificates
+    insecureSkipTLSVerify: INSECURE_SKIP_TLS_VERIFY,
     stages: picked.stages,
     thresholds: {
       http_req_failed: ["rate<0.02"], // transport errors
