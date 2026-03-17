@@ -3,7 +3,7 @@ set -euo pipefail
 
 upper() { echo "$1" | tr '[:lower:]' '[:upper:]'; }
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ENV_FILE="$ROOT_DIR/.env"
 TESTS_DIR="$ROOT_DIR/tests"
