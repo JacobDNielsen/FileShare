@@ -15,6 +15,7 @@ TARGET_URL=""               # optional. if set, it will override the .env URL re
 ENV_FILE=".env"             
 RESULTS_DIR="results"      
 INSECURE_SKIP_TLS_VERIFY="" # optional. empty = use value from .env
+CONNECTION_MODE=""          # optional. empty = default k6 behavior, or: no-reuse | no-vu-reuse
 EXTRA_K6_ARGS=(
   # Example:
   # --vus 5
@@ -127,7 +128,7 @@ list_tests() {
   printf '%s\n' "${tests[@]}" | sort
 }
 
-SCENARIOS=(stress spike breakpoint)
+SCENARIOS=(smoke stress spike breakpoint)
 
 validate_proto() {
   case "$1" in
@@ -147,6 +148,13 @@ validate_scenario() {
   done
 
   fail "Scenario must be one of: ${SCENARIOS[*]}. Got: $scenario"
+}
+
+validate_connection_mode() {
+  case "${1:-}" in
+    ""|no-reuse|no-vu-reuse) ;;
+    *) fail "CONNECTION_MODE must be empty, no-reuse, or no-vu-reuse. Got: $1" ;;
+  esac
 }
 
 normalize_bool() {
@@ -324,6 +332,10 @@ build_env_args() {
     -e "INSECURE_SKIP_TLS_VERIFY=$INSECURE_SKIP_TLS_VERIFY"
   )
 
+  if [[ -n "$CONNECTION_MODE" ]]; then
+    ENV_ARGS+=(-e "CONNECTION_MODE=$CONNECTION_MODE")
+  fi
+
   if [[ -n "${USERNAME:-}" ]]; then
     ENV_ARGS+=(-e "USERNAME=$USERNAME")
   fi
@@ -356,6 +368,7 @@ test_name=$TEST_NAME
 protocol=$PROTO
 scenario=$SCENARIO
 service=$service_name
+connection_mode=${CONNECTION_MODE:-default}
 target_url=$TARGET_URL
 test_file=$test_file
 env_file=$env_file
@@ -369,14 +382,15 @@ print_run_summary() {
   service_name="$(resolve_service_name "$TEST_NAME")"
 
   info "Running k6 test"
-  info "  mode:      $MODE_LABEL"
-  info "  test:      $TEST_NAME"
-  info "  protocol:  $PROTO"
-  info "  scenario:  $SCENARIO"
-  info "  service:   $service_name (auto from test name)"
-  info "  target:    $TARGET_URL"
-  info "  env file:  $ENV_FILE"
-  info "  results:   $OUT_DIR"
+  info "  mode:             $MODE_LABEL"
+  info "  test:             $TEST_NAME"
+  info "  protocol:         $PROTO"
+  info "  scenario:         $SCENARIO"
+  info "  connection mode:  ${CONNECTION_MODE:-default}"
+  info "  service:          $service_name (auto from test name)"
+  info "  target:           $TARGET_URL"
+  info "  env file:         $ENV_FILE"
+  info "  results:          $OUT_DIR"
 }
 
 usage() {
@@ -386,6 +400,8 @@ Usage:
   ./run.sh --interactive
   ./run.sh --manual
   ./run.sh --test auth_login --proto https --scenario stress
+  ./run.sh --test auth_login --proto https --scenario stress --conn-mode no-reuse
+  ./run.sh --test transport_ping --proto https --scenario smoke --conn-mode no-vu-reuse
   ./run.sh --test auth_login --proto https --scenario stress -- --vus 5 --duration 10s
 
 Modes:
@@ -398,6 +414,7 @@ Options:
   --test, -t              Test file name without .js
   --proto, -p             Protocol: http or https
   --scenario, -s          Scenario: ${SCENARIOS[*]}
+  --conn-mode             Connection mode: no-reuse | no-vu-reuse
   --target-url            Full target URL, skips env-based URL resolution
   --env-file              Env file path. Relative paths are resolved from the k6 project root.
   --results-dir           Results directory path. Relative paths are resolved from the k6 project root.
@@ -415,6 +432,8 @@ Examples:
   ./run.sh --interactive
   ./run.sh --manual
   ./run.sh --test auth_login --proto https --scenario spike
+  ./run.sh --test auth_login --proto https --scenario stress --conn-mode no-reuse
+  ./run.sh --test transport_ping --proto https --scenario smoke --conn-mode no-vu-reuse
   ./run.sh --interactive -- --vus 5 --duration 30s
 EOF_INNER
 }
@@ -452,6 +471,11 @@ while [[ $# -gt 0 ]]; do
     -s|--scenario)
       [[ $# -ge 2 ]] || fail "Missing value after $1"
       SCENARIO="$2"
+      shift 2
+      ;;
+    --conn-mode)
+      [[ $# -ge 2 ]] || fail "Missing value after $1"
+      CONNECTION_MODE="$2"
       shift 2
       ;;
     --target-url)
@@ -532,6 +556,7 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
 
   prompt_select PROTO "Choose protocol:" "$PROTO" http https
   prompt_select SCENARIO "Choose scenario:" "$SCENARIO" "${SCENARIOS[@]}"
+  prompt_input CONNECTION_MODE "Connection mode override (empty = default k6 behavior, or: no-reuse, no-vu-reuse)" "$CONNECTION_MODE" false true
   prompt_input TARGET_URL "Target URL override for this run only (press Enter to use .env URL resolution)" "$TARGET_URL" false true
 
   if [[ -z "$TARGET_URL" ]]; then
@@ -572,6 +597,7 @@ fi
 
 validate_proto "$PROTO"
 validate_scenario "$SCENARIO"
+validate_connection_mode "$CONNECTION_MODE"
 TEST_FILE="$TESTS_DIR/${TEST_NAME}.js"
 [[ -f "$TEST_FILE" ]] || fail "Test file not found: $TEST_FILE"
 
