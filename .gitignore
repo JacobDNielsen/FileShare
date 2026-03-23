@@ -494,3 +494,6 @@ $RECYCLE.BIN/
 # Signing key (PK)
 private.pem
 *.pem
+
+# k6 results
+/src/k6/results/
