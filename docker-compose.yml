@@ -5,6 +5,9 @@ x-aspnet-https-env: &aspnet-https-env
   ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
+x-ca-build: &ca-build
+  additional_contexts:
+    ca: ./.dev-certs/ca
 
 services:
   #---------------------------------------------------------------
@@ -14,10 +17,15 @@ services:
     build:
       context: ./src/svc/api-gateway-yarp
       dockerfile: Dockerfile
+      <<: *ca-build
     ports:
-      - "8088:8080"   # host:container
+      - "8088:8080" # HTTP  host:container
+      - "8089:8443" # HTTPS host:container
     environment:
-    - ASPNETCORE_ENVIRONMENT=Development
+      <<: *aspnet-https-env
+      ASPNETCORE_ENVIRONMENT: Docker
+    volumes:
+      - *https-mount
     depends_on:
       - auth
       - storage
@@ -49,14 +57,15 @@ services:
     build:
       context: ./src/svc/auth
       dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5039:8080" # HTTP
       - "5040:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
-      #Authentication__Jwt__Issuer: "https://localhost:5040"
-      Authentication__Jwt__Issuer: "http://auth:8080"
+      Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
+      SwaggerGatewayPrefix: /auth
       Authentication__Jwt__Audience: "fileshare"
       Authentication__Jwt__LatestKeyId: "kid-1"
       Authentication__Jwt__ExpiresMinutes: "60"
@@ -86,16 +95,16 @@ services:
     build:
       context: ./src/svc/storage
       dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5134:8080" # HTTP
       - "5135:8443" # HTTPS (client -> service)
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
-      #Authentication__Jwt__Issuer: "https://localhost:5040"
-      Authentication__Jwt__Issuer: "http://auth:8080"
+      Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
+      SwaggerGatewayPrefix: /storage
       Authentication__Jwt__Audience: "fileshare"
-
     volumes:
       - *https-mount
     depends_on:
@@ -124,16 +133,16 @@ services:
     build:
       context: ./src/svc/lock
       dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5038:8080" # HTTP
       - "5037:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
-      #Authentication__Jwt__Issuer: "https://localhost:5040"
-      Authentication__Jwt__Issuer: "http://auth:8080"
+      Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
+      SwaggerGatewayPrefix: /lock
       Authentication__Jwt__Audience: "fileshare"
-
     volumes:
       - *https-mount
     depends_on:
@@ -148,15 +157,17 @@ services:
     build:
       context: ./src/svc/wopi-host
       dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5018:8080" # HTTP
       - "5019:8443" # HTTPS (client -> service)
     environment:
       <<: *aspnet-https-env
-      #Authentication__Jwt__Issuer: "https://localhost:5040"
-      Authentication__Jwt__Issuer: "http://auth:8080"
+      Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
-
+      SwaggerGatewayPrefix: /wopi
+      Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
+      Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
     volumes:
       - *https-mount
     depends_on:
