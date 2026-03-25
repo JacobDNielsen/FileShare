@@ -29,7 +29,7 @@ mkcert -cert-file .\.dev-certs\pem\fileshare-dev.crt -key-file .\.dev-certs\pem\
 
 openssl pkcs12 -export -out .\.dev-certs\pfx\fileshare-dev.pfx -inkey .\.dev-certs\pem\fileshare-dev.key -in .\.dev-certs\pem\fileshare-dev.crt -password pass:verysecurepassword
 
-# Copy mkcert root CA for container trust (not yet supported)
+# Copy mkcert root CA for container trust
 
 $caroot = mkcert -CAROOT
 Copy-Item "$caroot\rootCA.pem" .\.dev-certs\ca\rootCA.pem -Force
