@@ -5,6 +5,7 @@ x-aspnet-https-env: &aspnet-https-env
   ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
+
 x-ca-build: &ca-build
   additional_contexts:
     ca: ./.dev-certs/ca
@@ -23,7 +24,10 @@ services:
       - "8089:8443" # HTTPS host:container
     environment:
       <<: *aspnet-https-env
-      ASPNETCORE_ENVIRONMENT: Docker
+      ReverseProxy__Clusters__auth__Destinations__auth-1__Address: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}/"
+      ReverseProxy__Clusters__storage__Destinations__storage-1__Address: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}/"
+      ReverseProxy__Clusters__lock__Destinations__lock-1__Address: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}/"
+      ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address: "${INTERNAL_SERVICE_SCHEME}://wopi-host:${INTERNAL_SERVICE_PORT}/"
     volumes:
       - *https-mount
     depends_on:
@@ -35,7 +39,6 @@ services:
   #---------------------------------------------------------------
   # Auth Service
   #---------------------------------------------------------------
-
   auth-db:
     image: postgres:16.4-alpine
     environment:
@@ -60,23 +63,22 @@ services:
       <<: *ca-build
     ports:
       - "5039:8080" # HTTP
-      - "5040:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
+      - "5040:8443" # HTTPS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
-      SwaggerGatewayPrefix: /auth
       Authentication__Jwt__Audience: "fileshare"
       Authentication__Jwt__LatestKeyId: "kid-1"
       Authentication__Jwt__ExpiresMinutes: "60"
       Authentication__Jwt__SigningKeys__0__KeyId: "kid-1"
+      SwaggerGatewayPrefix: /auth
     depends_on:
       - auth-db
 
   #---------------------------------------------------------------
   # Storage Service
   #---------------------------------------------------------------
-
   storage-db:
     image: postgres:15-alpine
     environment:
@@ -98,13 +100,13 @@ services:
       <<: *ca-build
     ports:
       - "5134:8080" # HTTP
-      - "5135:8443" # HTTPS (client -> service)
+      - "5135:8443" # HTTPS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
-      SwaggerGatewayPrefix: /storage
       Authentication__Jwt__Audience: "fileshare"
+      SwaggerGatewayPrefix: /storage
     volumes:
       - *https-mount
     depends_on:
@@ -114,7 +116,6 @@ services:
   #---------------------------------------------------------------
   # Lock Service
   #---------------------------------------------------------------
-
   lock-db:
     image: postgres:15-alpine
     environment:
@@ -136,13 +137,13 @@ services:
       <<: *ca-build
     ports:
       - "5038:8080" # HTTP
-      - "5037:8443" # HTTPS (Currently only supported for client to service calls, not internal service calls)
+      - "5037:8443" # HTTPS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
-      SwaggerGatewayPrefix: /lock
       Authentication__Jwt__Audience: "fileshare"
+      SwaggerGatewayPrefix: /lock
     volumes:
       - *https-mount
     depends_on:
@@ -152,7 +153,6 @@ services:
   #---------------------------------------------------------------
   # WOPI Host
   #---------------------------------------------------------------
-
   wopi-host:
     build:
       context: ./src/svc/wopi-host
@@ -160,18 +160,20 @@ services:
       <<: *ca-build
     ports:
       - "5018:8080" # HTTP
-      - "5019:8443" # HTTPS (client -> service)
+      - "5019:8443" # HTTPS
     environment:
       <<: *aspnet-https-env
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
-      SwaggerGatewayPrefix: /wopi
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
       Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
+      SwaggerGatewayPrefix: /wopi
     volumes:
       - *https-mount
     depends_on:
       - auth
+      - storage
+      - lock
 
 volumes:
   auth_data:
