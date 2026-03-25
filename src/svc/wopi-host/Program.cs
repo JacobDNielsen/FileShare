@@ -14,7 +14,6 @@ builder.Configuration.AddEnvironmentVariables();
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
 var audience = jwt["Audience"]!.TrimEnd('/');
-
 builder.Services.AddOptions<JwtConsumerConfig> ()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
@@ -49,9 +48,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
+var wopiGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
 builder.Services.AddSwaggerGen(s =>
 {
     s.SwaggerDoc("v1", new OpenApiInfo { Title = "WopiHost API", Version = "v1" });
+    s.AddServer(new OpenApiServer { Url = "/" });
+    if (!string.IsNullOrEmpty(wopiGatewayPrefix))
+        s.AddServer(new OpenApiServer { Url = wopiGatewayPrefix });
     s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -101,14 +104,12 @@ builder.Services.AddEndpointsApiExplorer();
 // Register the typed HttpClient for communicating with the Storage microservice
 builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
-    // Base URL of your Storage service (set in appsettings.json or environment variable)
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 
 builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
 {
-    // Base URL of your Storage service (set in appsettings.json or environment variable)
     client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
 });
@@ -126,7 +127,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+app.MapGet("/", () => Results.Redirect("swagger/index.html"))
     .WithTags("RootRedirect");
 
 app.UseAuthentication();

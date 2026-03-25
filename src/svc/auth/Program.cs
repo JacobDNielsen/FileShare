@@ -42,6 +42,10 @@ builder.Services.AddSingleton<JwtSigningKeyStore>();
 builder.Services.AddSwaggerGen(s =>
 {
     s.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth API", Version = "v1" });
+    s.AddServer(new OpenApiServer { Url = "/" });
+    var gatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
+    if (!string.IsNullOrEmpty(gatewayPrefix))
+        s.AddServer(new OpenApiServer { Url = gatewayPrefix });
 });
 
 builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
@@ -64,7 +68,6 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -103,7 +106,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+app.MapGet("/", () => Results.Redirect("swagger/index.html"))
     .WithTags("RootRedirect");
 
 app.UseCors();
