@@ -16,7 +16,10 @@
       "launchBrowser": false,
       "applicationUrl": "https://localhost:7298;http://localhost:5018",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Authentication__Jwt__Issuer": "https://localhost:5040",
+        "Services__Storage__BaseUrl": "https://localhost:5135",
+        "Services__LockManager__BaseUrl": "https://localhost:5037"
       }
     }
   }
