@@ -7,14 +7,18 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:8088",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ReverseProxy__Clusters__auth__Destinations__auth-1__Address": "http://localhost:5039/",
+        "ReverseProxy__Clusters__storage__Destinations__storage-1__Address": "http://localhost:5134/",
+        "ReverseProxy__Clusters__lock__Destinations__lock-1__Address": "http://localhost:5038/",
+        "ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address": "http://localhost:5018/"
       }
     },
     "https": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://localhost:7283;http://localhost:8088",
+      "applicationUrl": "https://localhost:8089;http://localhost:8088",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ReverseProxy__Clusters__auth__Destinations__auth-1__Address": "https://localhost:5040/",
