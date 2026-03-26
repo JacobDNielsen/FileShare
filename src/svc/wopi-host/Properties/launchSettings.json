@@ -10,7 +10,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Authentication__Jwt__Issuer": "http://localhost:5039",
         "Services__Storage__BaseUrl": "http://localhost:5134",
-        "Services__LockManager__BaseUrl": "http://localhost:5038"
+        "Services__LockManager__BaseUrl": "http://localhost:5038",
+        "SwaggerGatewayPrefix": "/wopi"
       }
     },
     "https": {
@@ -22,7 +23,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Authentication__Jwt__Issuer": "https://localhost:5040",
         "Services__Storage__BaseUrl": "https://localhost:5135",
-        "Services__LockManager__BaseUrl": "https://localhost:5037"
+        "Services__LockManager__BaseUrl": "https://localhost:5037",
+        "SwaggerGatewayPrefix": "/wopi"
       }
     }
   }
