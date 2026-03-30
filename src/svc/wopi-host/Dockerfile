@@ -9,11 +9,11 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Build context, from docker-compose (.src/svc/wopi-host)
-COPY ["WopiHost.csproj", "."]
+# Build context is repo root
+COPY ["src/svc/wopi-host/WopiHost.csproj", "."]
 RUN dotnet restore
 
-COPY . .
+COPY src/svc/wopi-host/ .
 RUN dotnet build -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish Image
@@ -25,7 +25,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish ./
 
-COPY --from=ca rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
+COPY .dev-certs/ca/rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
 RUN update-ca-certificates
 
 ENTRYPOINT ["dotnet", "WopiHost.dll"]

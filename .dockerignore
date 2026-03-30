@@ -1,0 +1,17 @@
+# Git
+.git
+.gitignore
+
+# Docs
+docs
+README.md
+
+# Exclude all service dirs first, then include specific ones per build
+# (Docker ignores the last matching rule, so this is intentionally broad)
+# Build artifacts
+**/bin
+**/obj
+**/.vs
+
+# Local dev secrets (only .dev-certs/ca/rootCA.pem is needed by Dockerfiles)
+.dev-certs/pfx

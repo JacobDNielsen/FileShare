@@ -3,14 +3,13 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project file first (for caching)
-COPY *.csproj ./
+COPY src/svc/api-gateway-yarp/*.csproj ./
 RUN dotnet restore
 
 # Copy everything else
-COPY . ./
+COPY src/svc/api-gateway-yarp/ ./
 
-# Restore + publish
-RUN dotnet restore
+# Publish
 RUN dotnet publish -c Release -o /app/publish
 
 # Runtime stage
@@ -18,7 +17,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-COPY --from=ca rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
+COPY .dev-certs/ca/rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
 RUN update-ca-certificates
 
 EXPOSE 8080
