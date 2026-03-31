@@ -30,6 +30,7 @@ public class FileController : ControllerBase
         return Ok(files);
     }
 
+    [Authorize]
     [HttpGet("{fileId}/contents")]
     public async Task<IActionResult> GetFile([FromRoute] string fileId, CancellationToken ct)
     {
@@ -37,7 +38,7 @@ public class FileController : ControllerBase
         //Vi burde tilføje access token til dette senere
         var (stream, fileName) = await _fileService.GetFileAsync(fileId, ct);
         if (stream == null)
-        {
+        { 
             return NotFound();
         }
 

@@ -102,9 +102,16 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<OpenFgaConfig>(
+    builder.Configuration.GetSection("OpenFga"));
+
+//builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<IAuthorizationService, OpenFgaAuthorizationService>();
+
 builder.Services.AddScoped<IFileStorage, FileStorage>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
+//builder.Services.AddScoped<IAuthorizationService, OpenFgaAuthorizationService>();
 
 var app = builder.Build();
 
