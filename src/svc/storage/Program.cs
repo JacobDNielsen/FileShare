@@ -131,7 +131,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/", () => Results.Redirect("swagger/index.html")).WithTags("RootRedirect");
+app.MapGet("/", () => Results.Redirect("swagger/index.html"))
+    .WithTags("RootRedirect");
 
 
 app.Run();
