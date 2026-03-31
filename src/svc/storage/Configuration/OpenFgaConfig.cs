@@ -1,7 +1,8 @@
-using System.Net.Http.Json;
-using Microsoft.Extensions.Options;
+namespace Storage.Configuration;
 
-public interface IAuthorizationService
+public class OpenFgaConfig
 {
-    Task<bool> CanViewFile(string userId, string fileId);
+    public string ApiUrl { get; set; } = "";
+    public string StoreId { get; set; } = "";
+    public string AuthorizationModelId { get; set; } = "";
 }

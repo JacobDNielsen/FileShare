@@ -9,6 +9,7 @@ using System.Security.Claims;
 using Storage.FileStorage;
 using Storage.Repositories;
 using System.ComponentModel;
+using Storage.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 

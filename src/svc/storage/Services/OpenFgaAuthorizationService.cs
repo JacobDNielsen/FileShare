@@ -1,3 +1,7 @@
+using Storage.Configuration;
+using Storage.Services;
+using Microsoft.Extensions.Options;
+
 public class OpenFgaAuthorizationService : IAuthorizationService
 {
     private readonly HttpClient _http;
