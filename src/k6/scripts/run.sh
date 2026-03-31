@@ -6,12 +6,12 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # If false, values are read from the configuration block below and .env file. 
 # If true, the user is prompted for values in the terminal, with defaults from the configuration block and .env.
-INTERACTIVE_MODE=false 
+INTERACTIVE_MODE=true
 
 TEST_NAME="auth_login"
 PROTO="https"
 SCENARIO="stress"
-TARGET_URL=""               # optional. if set, it will override the .env URL resolution
+TARGET_URL="http://localhost:8088"               # optional. if set, it will override the .env URL resolution
 ENV_FILE=".env"             
 RESULTS_DIR="results"      
 INSECURE_SKIP_TLS_VERIFY="" # optional. empty = use value from .env
