@@ -4,6 +4,7 @@ import { getEnvVariable } from "../helpers/env.js";
 import { scenarioOption } from "../helpers/scenarios.js";
 
 const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
+const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
 
 export const options = scenarioOption(SCENARIO);
 
@@ -29,7 +30,10 @@ export default function () {
       tags: { 
         name: "auth_signup" ,
         scenario: SCENARIO,
-      }
+        protocol: TARGET_URL.startsWith("https") ? "https" : "http",
+       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
+      },
+      timeout:"30s",
     }
   );
 
@@ -61,7 +65,10 @@ export default function () {
     tags: {
        name: "storage_get_files",
        scenario: SCENARIO,
-    }
+       protocol: TARGET_URL.startsWith("https") ? "https" : "http",
+       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
+    },
+    timeout:"30s",
  });
 
 
