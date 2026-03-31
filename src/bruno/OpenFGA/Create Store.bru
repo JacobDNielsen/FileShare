@@ -1,0 +1,21 @@
+meta {
+  name: Create Store
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/stores
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "fileshare"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

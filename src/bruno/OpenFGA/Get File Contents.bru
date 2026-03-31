@@ -1,0 +1,15 @@
+meta {
+  name: Get File Contents
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/files/{fileId}/contents
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,35 @@
+meta {
+  name: Write Tuples
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/stores/{{storeId}}/write
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "writes": {
+      "tuple_keys": [
+        {
+          "user": "user:mads",
+          "relation": "owner",
+          "object": "folder:thesis"
+        },
+        {
+          "user": "folder:thesis",
+          "relation": "parent",
+          "object": "file:report"
+        }
+      ]
+    },
+    "authorization_model_id": "{{authorizationModelId}}"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

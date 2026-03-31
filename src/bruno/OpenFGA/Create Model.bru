@@ -1,0 +1,74 @@
+meta {
+  name: Create Model
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/stores/{{storeId}}/authorization-models
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "schema_version": "1.1",
+    "type_definitions": [
+      { "type": "user" },
+      {
+        "type": "folder",
+        "relations": {
+          "owner": { "this": {} },
+          "viewer": { "this": {} },
+          "can_view": {
+            "union": {
+              "child": [
+                { "computedUserset": { "relation": "owner" } },
+                { "computedUserset": { "relation": "viewer" } }
+              ]
+            }
+          }
+        },
+        "metadata": {
+          "relations": {
+            "owner": { "directly_related_user_types": [{ "type": "user" }] },
+            "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+          }
+        }
+      },
+      {
+        "type": "file",
+        "relations": {
+          "owner": { "this": {} },
+          "viewer": { "this": {} },
+          "parent": { "this": {} },
+          "can_view": {
+            "union": {
+              "child": [
+                { "computedUserset": { "relation": "owner" } },
+                { "computedUserset": { "relation": "viewer" } },
+                {
+                  "tupleToUserset": {
+                    "tupleset": { "relation": "parent" },
+                    "computedUserset": { "relation": "can_view" }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "metadata": {
+          "relations": {
+            "owner": { "directly_related_user_types": [{ "type": "user" }] },
+            "viewer": { "directly_related_user_types": [{ "type": "user" }] },
+            "parent": { "directly_related_user_types": [{ "type": "folder" }] }
+          }
+        }
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}
