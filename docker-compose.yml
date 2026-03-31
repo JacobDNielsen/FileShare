@@ -6,14 +6,19 @@ x-aspnet-https-env: &aspnet-https-env
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 
+x-ca-build: &ca-build
+  additional_contexts:
+    ca: ./.dev-certs/ca
+
 services:
   #---------------------------------------------------------------
   # API Gateway - Yarp
   #---------------------------------------------------------------
   api-gateway:
     build:
-      context: .
-      dockerfile: src/svc/api-gateway-yarp/Dockerfile
+      context: ./src/svc/api-gateway-yarp
+      dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "8088:8080" # HTTP  host:container
       - "8089:8443" # HTTPS host:container
@@ -53,8 +58,9 @@ services:
       - ./kid1.pem:/run/secrets/auth-jwt-key:ro
       - *https-mount
     build:
-      context: .
-      dockerfile: src/svc/auth/Dockerfile
+      context: ./src/svc/auth
+      dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5039:8080" # HTTP
       - "5040:8443" # HTTPS
@@ -89,8 +95,9 @@ services:
 
   storage:
     build:
-      context: .
-      dockerfile: src/svc/storage/Dockerfile
+      context: ./src/svc/storage
+      dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5134:8080" # HTTP
       - "5135:8443" # HTTPS
@@ -125,8 +132,9 @@ services:
 
   lock:
     build:
-      context: .
-      dockerfile: src/svc/lock/Dockerfile
+      context: ./src/svc/lock
+      dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5038:8080" # HTTP
       - "5037:8443" # HTTPS
@@ -147,8 +155,9 @@ services:
   #---------------------------------------------------------------
   wopi-host:
     build:
-      context: .
-      dockerfile: src/svc/wopi-host/Dockerfile
+      context: ./src/svc/wopi-host
+      dockerfile: Dockerfile
+      <<: *ca-build
     ports:
       - "5018:8080" # HTTP
       - "5019:8443" # HTTPS
