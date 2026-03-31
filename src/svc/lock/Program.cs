@@ -15,7 +15,6 @@ builder.Services.AddDbContext<WopiDbContext>(options =>
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
 var audience = jwt["Audience"]!.TrimEnd('/');
-
 builder.Services.AddOptions<JwtConsumerConfig> ()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
@@ -50,9 +49,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
+var lockGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
 builder.Services.AddSwaggerGen(s =>
 {
     s.SwaggerDoc("v1", new OpenApiInfo { Title = "WOPI-Lock API", Version = "v1" });
+    s.AddServer(new OpenApiServer { Url = "/" });
+    if (!string.IsNullOrEmpty(lockGatewayPrefix))
+        s.AddServer(new OpenApiServer { Url = lockGatewayPrefix });
     s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -81,7 +84,6 @@ builder.Services.AddSwaggerGen(s =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -127,8 +129,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
-.    WithTags("RootRedirect");
+app.MapGet("/", () => Results.Redirect("swagger/index.html"))
+    .WithTags("RootRedirect");
 
 
 

@@ -25,4 +25,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish ./
 
+COPY --from=ca rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
+RUN update-ca-certificates
+
 ENTRYPOINT ["dotnet", "WopiHost.dll"]

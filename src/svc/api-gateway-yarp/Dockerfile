@@ -18,8 +18,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish ./
 
+COPY --from=ca rootCA.pem /usr/local/share/ca-certificates/mkcert-ca.crt
+RUN update-ca-certificates
+
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8443
 
 # IMPORTANT: update this if your compiled DLL name differs
 ENTRYPOINT ["dotnet", "ApiGatewayYarp.dll"]

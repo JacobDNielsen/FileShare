@@ -18,7 +18,6 @@ builder.Services.AddDbContext<WopiDbContext>(options =>
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
 var audience = jwt["Audience"]!.TrimEnd('/');
-
 builder.Services.AddOptions<JwtConsumerConfig> ()
     .Bind(builder.Configuration.GetSection("Authentication:Jwt"))
     .Validate(config =>
@@ -53,9 +52,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
+var storageGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
 builder.Services.AddSwaggerGen(s =>
 {
     s.SwaggerDoc("v1", new OpenApiInfo { Title = "Storage API", Version = "v1" });
+    s.AddServer(new OpenApiServer { Url = "/" });
+    if (!string.IsNullOrEmpty(storageGatewayPrefix))
+        s.AddServer(new OpenApiServer { Url = storageGatewayPrefix });
     s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -128,8 +131,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
-.    WithTags("RootRedirect");
+app.MapGet("/", () => Results.Redirect("swagger/index.html"))
+    .WithTags("RootRedirect");
 
 
 app.Run();
