@@ -1,5 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -8,6 +11,16 @@ using System.ComponentModel;
 using Lock.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
+if (mtlsEnabled)
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ConfigureHttpsDefaults(https =>
+            https.ClientCertificateMode = ClientCertificateMode.AllowCertificate);
+    });
+}
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -47,7 +60,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
-});
+})
+.AddCertificate(options =>
+{
+    options.AllowedCertificateTypes = CertificateTypes.Chained;
+    options.RevocationMode = X509RevocationMode.NoCheck;
+})
+.AddCertificateCache();
 
 var lockGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
 builder.Services.AddSwaggerGen(s =>
@@ -122,6 +141,25 @@ if (app.Environment.IsDevelopment())
 } else
 {
     app.UseHttpsRedirection();
+}
+
+if (mtlsEnabled)
+{
+    app.Use(async (context, next) =>
+    {
+        var path = context.Request.Path.Value ?? "";
+        var exempt = path == "/" || path.StartsWith("/swagger");
+        if (!exempt)
+        {
+            var result = await context.AuthenticateAsync(CertificateAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+        await next(context);
+    });
 }
 
 app.UseAuthentication();
