@@ -1,4 +1,4 @@
-# Swagger // OpenAPI
+# Swagger / OpenAPI
 
 Each microservice exposes Swagger UI in the `Development` environment only. Swagger is accessible both by hitting the service directly and through the API Gateway.
 
