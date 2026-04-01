@@ -1,7 +1,10 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Auth.Services;
@@ -13,6 +16,16 @@ using Auth.Repository;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
+if (mtlsEnabled)
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ConfigureHttpsDefaults(https =>
+            https.ClientCertificateMode = ClientCertificateMode.AllowCertificate);
+    });
+}
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -51,6 +64,18 @@ builder.Services.AddSwaggerGen(s =>
 builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 
 builder.Services.AddAuthorization();
+
+if (mtlsEnabled)
+{
+    builder.Services.AddAuthentication()
+        .AddCertificate(options =>
+        {
+            options.AllowedCertificateTypes = CertificateTypes.Chained;
+            options.RevocationMode = X509RevocationMode.NoCheck;
+        })
+        .AddCertificateCache();
+}
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -108,6 +133,25 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => Results.Redirect("swagger/index.html"))
     .WithTags("RootRedirect");
+
+if (mtlsEnabled)
+{
+    app.Use(async (context, next) =>
+    {
+        var path = context.Request.Path.Value ?? "";
+        var exempt = path == "/" || path.StartsWith("/swagger") || path.StartsWith("/.well-known");
+        if (!exempt)
+        {
+            var result = await context.AuthenticateAsync(CertificateAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+        await next(context);
+    });
+}
 
 app.UseCors();
 
