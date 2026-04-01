@@ -1,6 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +12,20 @@ using System.Security.Claims;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
+X509Certificate2? clientCert = null;
+if (mtlsEnabled)
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ConfigureHttpsDefaults(https =>
+            https.ClientCertificateMode = ClientCertificateMode.AllowCertificate);
+    });
+    var certPath = builder.Configuration["Mtls:ClientCertPath"]!;
+    var certPassword = builder.Configuration["Mtls:ClientCertPassword"]!;
+    clientCert = new X509Certificate2(certPath, certPassword, X509KeyStorageFlags.EphemeralKeySet);
+}
 builder.Configuration.AddEnvironmentVariables();
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
@@ -46,7 +63,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
-});
+})
+.AddCertificate(options =>
+{
+    options.AllowedCertificateTypes = CertificateTypes.Chained;
+    options.RevocationMode = X509RevocationMode.NoCheck;
+})
+.AddCertificateCache();
 
 var wopiGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
 builder.Services.AddSwaggerGen(s =>
@@ -106,12 +129,24 @@ builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    if (clientCert != null) handler.ClientCertificates.Add(clientCert);
+    return handler;
 });
 
 builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    if (clientCert != null) handler.ClientCertificates.Add(clientCert);
+    return handler;
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -129,6 +164,25 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => Results.Redirect("swagger/index.html"))
     .WithTags("RootRedirect");
+
+if (mtlsEnabled)
+{
+    app.Use(async (context, next) =>
+    {
+        var path = context.Request.Path.Value ?? "";
+        var exempt = path == "/" || path.StartsWith("/swagger");
+        if (!exempt)
+        {
+            var result = await context.AuthenticateAsync(CertificateAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+        await next(context);
+    });
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

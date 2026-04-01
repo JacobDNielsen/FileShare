@@ -24,7 +24,9 @@
         "Authentication__Jwt__Issuer": "https://localhost:5040",
         "Services__Storage__BaseUrl": "https://localhost:5135",
         "Services__LockManager__BaseUrl": "https://localhost:5037",
-        "SwaggerGatewayPrefix": "/wopi"
+        "SwaggerGatewayPrefix": "/wopi",
+        "Mtls__Enabled": "true",
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/wopi-host-client.pfx"
       }
     }
   }
