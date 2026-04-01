@@ -20,7 +20,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Authentication__Jwt__Issuer": "https://localhost:5040",
-        "SwaggerGatewayPrefix": "/storage"
+        "SwaggerGatewayPrefix": "/storage",
+        "Mtls__Enabled": "true"
       }
     }
   }
