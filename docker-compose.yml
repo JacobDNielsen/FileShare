@@ -5,6 +5,7 @@ x-aspnet-https-env: &aspnet-https-env
   ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
   Mtls__Enabled: ${INTERNAL_MTLS_ENABLED:-false}
   Mtls__ClientCertPassword: ${INTERNAL_MTLS_CERT_PASSWORD}
+  Mtls__AllowStartupWithoutClientCertInDevelopment: ${INTERNAL_MTLS_ALLOW_STARTUP_WITHOUT_CLIENT_CERT_IN_DEVELOPMENT:-false}
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 

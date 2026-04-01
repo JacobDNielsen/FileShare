@@ -2,6 +2,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
@@ -133,6 +134,13 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => Results.Redirect("swagger/index.html"))
     .WithTags("RootRedirect");
+
+app.MapGet("/mtls/probe", () => Results.Ok(new
+{
+    status = "ok",
+    message = "mTLS client certificate accepted"
+}))
+    .WithTags("MtlsProbe");
 
 if (mtlsEnabled)
 {
