@@ -96,6 +96,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGet("/debug/authconfig", (IConfiguration config) =>
+    {
+        return Results.Json(config.GetSection("Authentication").AsEnumerable());
+    })
+    .WithTags("DebugAuthConfiguration");
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
