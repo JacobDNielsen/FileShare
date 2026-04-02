@@ -26,6 +26,22 @@
         "ReverseProxy__Clusters__lock__Destinations__lock-1__Address": "https://localhost:5037/",
         "ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address": "https://localhost:5019/"
       }
+    },
+    "mtls": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "https://localhost:8089;http://localhost:8088",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ReverseProxy__Clusters__auth__Destinations__auth-1__Address": "https://localhost:5041/",
+        "ReverseProxy__Clusters__storage__Destinations__storage-1__Address": "https://localhost:5136/",
+        "ReverseProxy__Clusters__lock__Destinations__lock-1__Address": "https://localhost:5036/",
+        "ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address": "https://localhost:5020/",
+        "Mtls__Enabled": "true",
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx",
+        "Mtls__ClientCertPassword": ""
+      }
     }
   }
 }

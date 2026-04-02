@@ -96,3 +96,65 @@ Your `.dev-certs/` directory should now look like this:
 ```
 
 The `.pfx` file and password are mounted into containers via `docker-compose.yml` and loaded by each service's Kestrel configuration.
+
+---
+
+## 7. Generate the shared client certificate for mTLS
+
+All internal services (gateway, wopi-host, storage, lock) present this certificate when
+connecting to any mTLS listener. The existing `.dev-certs/pem/client-auth.ext` is used to
+add the `clientAuth` EKU.
+
+Find your mkcert CA directory:
+
+```powershell
+$caroot = mkcert -CAROOT
+```
+
+Generate the key and sign the certificate with the same CA that signed the server cert:
+
+```powershell
+openssl genrsa -out .\.dev-certs\pem\fileshare-client.key 2048
+
+openssl req -new `
+  -key  .\.dev-certs\pem\fileshare-client.key `
+  -out  .\.dev-certs\pem\fileshare-client.csr `
+  -subj "/CN=fileshare-internal-client"
+
+openssl x509 -req `
+  -in      .\.dev-certs\pem\fileshare-client.csr `
+  -CA      "$caroot\rootCA.pem" `
+  -CAkey   "$caroot\rootCA-key.pem" `
+  -CAcreateserial `
+  -out     .\.dev-certs\pem\fileshare-client.crt `
+  -days    825 `
+  -extfile .\.dev-certs\pem\client-auth.ext
+```
+
+Bundle to PFX using the same password as `HTTPS_CERT_PASSWORD`:
+
+```powershell
+openssl pkcs12 -export `
+  -out    .\.dev-certs\pfx\fileshare-client.pfx `
+  -inkey  .\.dev-certs\pem\fileshare-client.key `
+  -in     .\.dev-certs\pem\fileshare-client.crt `
+  -password pass:your-password-here
+```
+
+The `.dev-certs/` directory should now also contain:
+
+```
+├── pem/
+│   ├── fileshare-client.crt
+│   ├── fileshare-client.key
+│   └── fileshare-client.csr   (safe to delete)
+└── pfx/
+    └── fileshare-client.pfx
+```
+
+The `/https` Docker volume mount (`.dev-certs/pfx → /https`) makes `fileshare-client.pfx`
+available at `/https/fileshare-client.pfx` inside every container automatically.
+
+> **Production note**: Replace the single shared cert with per-service client certs and
+> validate the connecting cert's CN or thumbprint using
+> `AddCertificate().Events.OnCertificateValidated`.

@@ -6,10 +6,22 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
+
+// Load client cert for mTLS outbound when enabled
+var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
+X509Certificate2? clientCert = null;
+if (mtlsEnabled)
+{
+    var path = builder.Configuration["Mtls:ClientCertPath"];
+    var pw   = builder.Configuration["Mtls:ClientCertPassword"];
+    if (!string.IsNullOrEmpty(path))
+        clientCert = new X509Certificate2(path, pw);
+}
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
@@ -46,6 +58,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
+    // Use client cert for OIDC discovery / JWKS fetch when on mTLS issuer
+    if (clientCert is not null)
+        options.BackchannelHttpHandler = new HttpClientHandler
+            { ClientCertificates = { clientCert } };
 });
 
 var wopiGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
@@ -106,12 +122,26 @@ builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    if (clientCert is not null)
+        handler.ClientCertificates.Add(clientCert);
+    return handler;
 });
 
 builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    if (clientCert is not null)
+        handler.ClientCertificates.Add(clientCert);
+    return handler;
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -122,6 +152,22 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    })
+    .AllowAnonymous()
+    .WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

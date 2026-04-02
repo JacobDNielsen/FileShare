@@ -9,8 +9,20 @@ using System.Security.Claims;
 using Storage.FileStorage;
 using Storage.Repositories;
 using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load client cert for mTLS backchannel when enabled
+var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
+X509Certificate2? clientCert = null;
+if (mtlsEnabled)
+{
+    var path = builder.Configuration["Mtls:ClientCertPath"];
+    var pw   = builder.Configuration["Mtls:ClientCertPassword"];
+    if (!string.IsNullOrEmpty(path))
+        clientCert = new X509Certificate2(path, pw);
+}
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -50,6 +62,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
+    // Use client cert for OIDC discovery / JWKS fetch when on mTLS issuer
+    if (clientCert is not null)
+        options.BackchannelHttpHandler = new HttpClientHandler
+            { ClientCertificates = { clientCert } };
 });
 
 var storageGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
@@ -119,6 +135,22 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    })
+    .AllowAnonymous()
+    .WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

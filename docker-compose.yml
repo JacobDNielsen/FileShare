@@ -64,6 +64,7 @@ services:
     ports:
       - "5039:8080" # HTTP
       - "5040:8443" # HTTPS
+      - "5041:9443" # mTLS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
@@ -101,6 +102,7 @@ services:
     ports:
       - "5134:8080" # HTTP
       - "5135:8443" # HTTPS
+      - "5136:9443" # mTLS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
@@ -138,6 +140,7 @@ services:
     ports:
       - "5038:8080" # HTTP
       - "5037:8443" # HTTPS
+      - "5036:9443" # mTLS
     environment:
       <<: *aspnet-https-env
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
@@ -161,6 +164,7 @@ services:
     ports:
       - "5018:8080" # HTTP
       - "5019:8443" # HTTPS
+      - "5020:9443" # mTLS
     environment:
       <<: *aspnet-https-env
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"

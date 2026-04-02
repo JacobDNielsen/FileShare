@@ -101,6 +101,22 @@ if (app.Environment.IsDevelopment())
         return Results.Json(config.GetSection("Authentication").AsEnumerable());
     })
     .WithTags("DebugAuthConfiguration");
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    })
+    .AllowAnonymous()
+    .WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();
