@@ -25,7 +25,7 @@ mkcert -install
 Copy `.env.example` to `.env` in the project root and fill in a password. The password is used for both generating and loading the certificate:
 
 ```env
-HTTPS_CERT_PASSWORD=your-password-here
+DEV_CERT_PASSWORD=your-password-here
 ```
 
 ---
@@ -82,56 +82,48 @@ Copy-Item "$caroot\rootCA.pem" .\.dev-certs\ca\rootCA.pem -Force
 
 ## Result
 
-Your `.dev-certs/` directory should now look like this:
+After completing steps 1–6 your `.dev-certs/` directory should look like this:
 
 ```
 .dev-certs/
 ├── ca/
 │   └── rootCA.pem          # mkcert root CA
 ├── pem/
-│   ├── fileshare-dev.crt   # Certificate (PEM)
-│   └── fileshare-dev.key   # Private key (PEM)
+│   ├── fileshare-dev.crt   # Server certificate (PEM)
+│   └── fileshare-dev.key   # Server private key (PEM)
 └── pfx/
-    └── fileshare-dev.pfx   # Certificate + key bundle for Kestrel
+    └── fileshare-dev.pfx   # Server certificate + key bundle for Kestrel
 ```
 
-The `.pfx` file and password are mounted into containers via `docker-compose.yml` and loaded by each service's Kestrel configuration.
+After also completing section 7 (client certificate for mTLS), the directory will also contain:
+
+```
+├── pem/
+│   ├── fileshare-client.crt   # Client certificate (PEM)
+│   └── fileshare-client.key   # Client private key (PEM)
+└── pfx/
+    └── fileshare-client.pfx   # Client certificate bundle for mTLS
+```
+
+The `.dev-certs/pfx/` directory is mounted read-only into every container at `/https/`. Services load `fileshare-dev.pfx` as the server certificate and, when mTLS is enabled, load `fileshare-client.pfx` as the outbound client certificate.
 
 ---
 
 ## 7. Generate the shared client certificate for mTLS
 
 All internal services (gateway, wopi-host, storage, lock) present this certificate when
-connecting to any mTLS listener. The existing `.dev-certs/pem/client-auth.ext` is used to
-add the `clientAuth` EKU.
+connecting to any mTLS listener.
 
-Find your mkcert CA directory:
-
-```powershell
-$caroot = mkcert -CAROOT
-```
-
-Generate the key and sign the certificate with the same CA that signed the server cert:
+Generate the client certificate with mkcert:
 
 ```powershell
-openssl genrsa -out .\.dev-certs\pem\fileshare-client.key 2048
-
-openssl req -new `
-  -key  .\.dev-certs\pem\fileshare-client.key `
-  -out  .\.dev-certs\pem\fileshare-client.csr `
-  -subj "/CN=fileshare-internal-client"
-
-openssl x509 -req `
-  -in      .\.dev-certs\pem\fileshare-client.csr `
-  -CA      "$caroot\rootCA.pem" `
-  -CAkey   "$caroot\rootCA-key.pem" `
-  -CAcreateserial `
-  -out     .\.dev-certs\pem\fileshare-client.crt `
-  -days    825 `
-  -extfile .\.dev-certs\pem\client-auth.ext
+mkcert -client `
+  -cert-file .\.dev-certs\pem\fileshare-client.crt `
+  -key-file  .\.dev-certs\pem\fileshare-client.key `
+  localhost 127.0.0.1 ::1 auth storage lock wopi-host
 ```
 
-Bundle to PFX using the same password as `HTTPS_CERT_PASSWORD`:
+Bundle to PFX using the same password as `DEV_CERT_PASSWORD`:
 
 ```powershell
 openssl pkcs12 -export `
@@ -139,17 +131,6 @@ openssl pkcs12 -export `
   -inkey  .\.dev-certs\pem\fileshare-client.key `
   -in     .\.dev-certs\pem\fileshare-client.crt `
   -password pass:your-password-here
-```
-
-The `.dev-certs/` directory should now also contain:
-
-```
-├── pem/
-│   ├── fileshare-client.crt
-│   ├── fileshare-client.key
-│   └── fileshare-client.csr   (safe to delete)
-└── pfx/
-    └── fileshare-client.pfx
 ```
 
 The `/https` Docker volume mount (`.dev-certs/pfx → /https`) makes `fileshare-client.pfx`
