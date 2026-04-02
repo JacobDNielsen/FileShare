@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using WopiHost.Configuration;
+using System.Text.Json.Serialization;
 
 
 
@@ -45,30 +46,53 @@ public class OpenFgaService : IOpenFgaService
             request,
             cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        var result = await response.Content.ReadFromJsonAsync<OpenFgaCheckResponse>(cancellationToken: cancellationToken);
+            Console.WriteLine("OpenFGA request:");
+            Console.WriteLine($"StoreId: {_options.StoreId}");
+            Console.WriteLine($"ModelId: {_options.AuthorizationModelId}");
+            Console.WriteLine($"User: {user}");
+            Console.WriteLine($"Relation: {relation}");
+            Console.WriteLine($"Object: {obj}");
+            Console.WriteLine($"Status: {(int)response.StatusCode}");
+            Console.WriteLine($"Response: {responseBody}");
+
+            response.EnsureSuccessStatusCode();
+
+            var result = System.Text.Json.JsonSerializer.Deserialize<OpenFgaCheckResponse>(
+            responseBody,
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
 
         return result?.Allowed ?? false;
-    }
+}
 
     private sealed class OpenFgaCheckRequest
     {
+        [JsonPropertyName("tuple_key")]
         public OpenFgaTupleKey TupleKey { get; set; } = new();
+
+        [JsonPropertyName("authorization_model_id")]
         public string AuthorizationModelId { get; set; } = string.Empty;
     }
 
     private sealed class OpenFgaTupleKey
     {
+        [JsonPropertyName("user")]
         public string User { get; set; } = string.Empty;
+
+        [JsonPropertyName("relation")]
         public string Relation { get; set; } = string.Empty;
 
-        [System.Text.Json.Serialization.JsonPropertyName("object")]
+        [JsonPropertyName("object")]
         public string Object { get; set; } = string.Empty;
     }
 
     private sealed class OpenFgaCheckResponse
     {
+        [JsonPropertyName("allowed")]
         public bool Allowed { get; set; }
     }
 }
