@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using WopiHost.Dto;
 using System.Security.Principal;
+using WopiHost.Configuration;
 
 [ApiController]
 [Authorize]
@@ -10,17 +11,32 @@ public sealed class WopiFilesController : ControllerBase
 {
     private readonly IStorageClient _storage;
     private readonly ILockClient _lock;
-    public WopiFilesController(IStorageClient storage, ILockClient client)
+    private readonly IOpenFgaService _openFgaService;
+    public WopiFilesController(IStorageClient storage, ILockClient client, IOpenFgaService openFgaService)
     { 
         _storage = storage;
         _lock = client;
+        _openFgaService = openFgaService;
     }
 
     // WOPI: CheckFileInfo proxy
     [HttpGet("{id}")]
-    public async Task<IActionResult> CheckFileInfo([FromRoute] string id, CancellationToken ct)
+    public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
     {
-        var info = await _storage.CheckFileInfoAsync(id, ct);
+        var userId = User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var allowed = await _openFgaService.CanViewFileAsync(userId, fileId, ct);
+
+        if (!allowed)
+        {
+            return Forbid();
+        }
+        var info = await _storage.CheckFileInfoAsync(fileId, ct);
         return info is null ? NotFound() : Ok(info);
     }
 

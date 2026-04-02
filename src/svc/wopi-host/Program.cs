@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using WopiHost.Configuration;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,6 +102,14 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
+builder.Services.Configure<OpenFgaOptions>(
+    builder.Configuration.GetSection(OpenFgaOptions.SectionName));
+
+builder.Services.AddHttpClient<IOpenFgaService, OpenFgaService>((sp, client) =>
+{
+    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenFgaOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 // Register the typed HttpClient for communicating with the Storage microservice
 builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
