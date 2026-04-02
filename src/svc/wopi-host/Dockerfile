@@ -3,6 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8443
+EXPOSE 9443
 
 # Build image
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build

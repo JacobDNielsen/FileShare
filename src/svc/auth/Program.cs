@@ -96,27 +96,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapGet("/debug/authconfig", (IConfiguration config) =>
-    {
-        return Results.Json(config.GetSection("Authentication").AsEnumerable());
-    })
-    .WithTags("DebugAuthConfiguration");
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
-        return Results.Ok(new
-        {
-            port = ctx.Connection.LocalPort,
-            clientCert = cert == null ? null : (object)new
-            {
-                subject    = cert.Subject,
-                thumbprint = cert.Thumbprint,
-                notAfter   = cert.NotAfter
-            }
-        });
-    })
-    .AllowAnonymous()
-    .WithTags("Debug");
+        return Results.Ok(new { port = ctx.Connection.LocalPort, clientCert = cert?.Subject });
+    }).AllowAnonymous();
 } else
 {
     app.UseHttpsRedirection();

@@ -8,9 +8,18 @@ X509Certificate2? clientCert = null;
 if (mtlsEnabled)
 {
     var path = builder.Configuration["Mtls:ClientCertPath"];
-    var pw   = builder.Configuration["Mtls:ClientCertPassword"];
+    var pw   = builder.Configuration["DEV_CERT_PASSWORD"];
     if (!string.IsNullOrEmpty(path))
-        clientCert = new X509Certificate2(path, pw);
+    {
+        try
+        {
+            clientCert = X509CertificateLoader.LoadPkcs12FromFile(path, pw ?? string.Empty);
+        }
+        catch (Exception ex) when (builder.Environment.IsDevelopment())
+        {
+            Console.WriteLine($"[mTLS] Client cert failed to load: {ex.Message}");
+        }
+    }
 }
 
 //Add YARP from configuration

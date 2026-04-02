@@ -1,8 +1,20 @@
-x-aspnet-https-env: &aspnet-https-env
+# Internal services: three Kestrel listeners (HTTP + HTTPS + mTLS)
+x-kestrel-endpoints: &kestrel-endpoints
   ASPNETCORE_ENVIRONMENT: Development
-  ASPNETCORE_URLS: "http://+:8080;https://+:8443"
-  ASPNETCORE_Kestrel__Certificates__Default__Path: /https/fileshare-dev.pfx
-  ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
+  Kestrel__Endpoints__Http__Url: "http://+:8080"
+  Kestrel__Endpoints__Https__Url: "https://+:8443"
+  Kestrel__Endpoints__Https__Certificate__Path: /https/fileshare-dev.pfx
+  Kestrel__Endpoints__Https__Certificate__Password: ${DEV_CERT_PASSWORD}
+  Kestrel__Endpoints__Mtls__Url: "https://+:9443"
+  Kestrel__Endpoints__Mtls__Certificate__Path: /https/fileshare-dev.pfx
+  Kestrel__Endpoints__Mtls__Certificate__Password: ${DEV_CERT_PASSWORD}
+  Kestrel__Endpoints__Mtls__ClientCertificateMode: RequireCertificate
+
+# Client cert used for outgoing internal mTLS calls (enabled by INTERNAL_SERVICE_USE_MTLS)
+x-mtls-client: &mtls-client
+  Mtls__Enabled: "${INTERNAL_SERVICE_USE_MTLS:-false}"
+  Mtls__ClientCertPath: /https/fileshare-client.pfx
+  DEV_CERT_PASSWORD: ${DEV_CERT_PASSWORD}
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 
@@ -23,7 +35,11 @@ services:
       - "8088:8080" # HTTP  host:container
       - "8089:8443" # HTTPS host:container
     environment:
-      <<: *aspnet-https-env
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/fileshare-dev.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${DEV_CERT_PASSWORD}
+      <<: *mtls-client
       ReverseProxy__Clusters__auth__Destinations__auth-1__Address: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__storage__Destinations__storage-1__Address: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__lock__Destinations__lock-1__Address: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}/"
@@ -66,7 +82,7 @@ services:
       - "5040:8443" # HTTPS
       - "5041:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: *kestrel-endpoints
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
@@ -104,7 +120,7 @@ services:
       - "5135:8443" # HTTPS
       - "5136:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
@@ -142,7 +158,7 @@ services:
       - "5037:8443" # HTTPS
       - "5036:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
@@ -166,7 +182,7 @@ services:
       - "5019:8443" # HTTPS
       - "5020:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"

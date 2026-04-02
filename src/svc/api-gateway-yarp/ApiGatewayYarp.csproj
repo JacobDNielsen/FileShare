@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ApiGatewayYarp</RootNamespace>
+    <UserSecretsId>fileshare-api-gateway-yarp</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -19,9 +19,18 @@ X509Certificate2? clientCert = null;
 if (mtlsEnabled)
 {
     var path = builder.Configuration["Mtls:ClientCertPath"];
-    var pw   = builder.Configuration["Mtls:ClientCertPassword"];
+    var pw   = builder.Configuration["DEV_CERT_PASSWORD"];
     if (!string.IsNullOrEmpty(path))
-        clientCert = new X509Certificate2(path, pw);
+    {
+        try
+        {
+            clientCert = X509CertificateLoader.LoadPkcs12FromFile(path, pw ?? string.Empty);
+        }
+        catch (Exception ex) when (builder.Environment.IsDevelopment())
+        {
+            Console.WriteLine($"[mTLS] Client cert failed to load: {ex.Message}");
+        }
+    }
 }
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
@@ -43,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.Authority = issuer;
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = issuer.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -138,19 +147,8 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
-        return Results.Ok(new
-        {
-            port = ctx.Connection.LocalPort,
-            clientCert = cert == null ? null : (object)new
-            {
-                subject    = cert.Subject,
-                thumbprint = cert.Thumbprint,
-                notAfter   = cert.NotAfter
-            }
-        });
-    })
-    .AllowAnonymous()
-    .WithTags("Debug");
+        return Results.Ok(new { port = ctx.Connection.LocalPort, clientCert = cert?.Subject });
+    }).AllowAnonymous();
 } else
 {
     app.UseHttpsRedirection();

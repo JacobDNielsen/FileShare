@@ -37,8 +37,7 @@
         "Authentication__Jwt__Issuer": "https://localhost:5041",
         "SwaggerGatewayPrefix": "/storage",
         "Mtls__Enabled": "true",
-        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx",
-        "Mtls__ClientCertPassword": ""
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx"
       }
     }
   }

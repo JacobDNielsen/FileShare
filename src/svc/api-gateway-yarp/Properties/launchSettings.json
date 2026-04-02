@@ -39,8 +39,7 @@
         "ReverseProxy__Clusters__lock__Destinations__lock-1__Address": "https://localhost:5036/",
         "ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address": "https://localhost:5020/",
         "Mtls__Enabled": "true",
-        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx",
-        "Mtls__ClientCertPassword": ""
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx"
       }
     }
   }

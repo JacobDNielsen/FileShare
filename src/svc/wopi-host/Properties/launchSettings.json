@@ -43,8 +43,7 @@
         "Services__LockManager__BaseUrl": "https://localhost:5036",
         "SwaggerGatewayPrefix": "/wopi",
         "Mtls__Enabled": "true",
-        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx",
-        "Mtls__ClientCertPassword": ""
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx"
       }
     }
   }
