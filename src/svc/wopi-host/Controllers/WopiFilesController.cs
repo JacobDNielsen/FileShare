@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using WopiHost.Dto;
 using System.Security.Principal;
 using WopiHost.Configuration;
+using System.Security.Claims;
 
 [ApiController]
 [Authorize]
@@ -20,16 +21,18 @@ public sealed class WopiFilesController : ControllerBase
     }
 
     // WOPI: CheckFileInfo proxy
-    [HttpGet("{id}")]
+    [HttpGet("{fileId}")]
     public async Task<IActionResult> CheckFileInfo([FromRoute] string fileId, CancellationToken ct)
     {
-        var userId = User.FindFirst("sub")?.Value;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        Console.WriteLine($"OpenFGA check for user:{userId} on file:{fileId}");
 
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
-
+        
         var allowed = await _openFgaService.CanViewFileAsync(userId, fileId, ct);
 
         if (!allowed)
