@@ -184,6 +184,8 @@ services:
       POSTGRES_DB: openfga
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+    volumes:
+      - openfga_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d openfga"]
       interval: 5s
@@ -220,3 +222,4 @@ volumes:
   auth_data:
   lock_data:
   storage_data:
+  openfga_data:
