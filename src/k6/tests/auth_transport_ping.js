@@ -11,7 +11,7 @@ export const options = scenarioOption(SCENARIO);
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
 
 export default function () {
-  const response = http.get(TARGET_URL, {
+  const response = http.get(`${TARGET_URL}/auth/benchmark/ping`, {
     tags: {
       test: "transport_ping",
       scenario: SCENARIO,
