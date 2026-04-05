@@ -8,6 +8,9 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using Storage.FileStorage;
 using Storage.Repositories;
+using Storage.Configuration;
+using Storage.Interfaces;
+using Storage.Services;
 using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -100,6 +103,15 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
+});
+
+builder.Services.Configure<OpenFgaOptions>(
+    builder.Configuration.GetSection(OpenFgaOptions.SectionName));
+
+builder.Services.AddHttpClient<IOpenFgaTupleWriter, OpenFgaTupleWriter>((sp, client) =>
+{
+    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenFgaOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
 });
 
 builder.Services.AddScoped<IFileStorage, FileStorage>();

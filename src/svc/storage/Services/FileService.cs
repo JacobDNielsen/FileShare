@@ -8,6 +8,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Storage.FileStorage;
 using Storage.Helpers;
 using System.IdentityModel.Tokens.Jwt;
+using Storage.Interfaces;
 
 namespace Storage.Services;
 
@@ -15,11 +16,13 @@ public class FileService : IFileService
 {
     private readonly IFileRepository _repo;
     private readonly IFileStorage _storage;
+    private readonly IOpenFgaTupleWriter _openFgaTupleWriter;
 
-        public FileService(IFileRepository repo, IFileStorage storage)
+        public FileService(IFileRepository repo, IFileStorage storage, IOpenFgaTupleWriter openFgaTupleWriter)
     {
         _repo = repo;
         _storage = storage;
+        _openFgaTupleWriter  = openFgaTupleWriter;
     }
 
      public async Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct)
@@ -33,7 +36,7 @@ public class FileService : IFileService
     }
 
 
-    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, /*int ownerId,*/ long size, CancellationToken ct)
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, string userId, /*int ownerId,*/ long size, CancellationToken ct)
     {
         var metadata = new FileMetadata
         {
@@ -48,16 +51,27 @@ public class FileService : IFileService
         try
         {
             await _storage.SaveAsync(metadata.FileId, content, ct);
+
+            await _openFgaTupleWriter.WriteOwnerTupleAsync(userId, metadata.FileId, ct);
+            Console.WriteLine($"Upload by user:{userId}");
         }
         catch
+    {
+        try
         {
-            // Roll back metadata if storage fails
-            await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
-            throw;
+            await _storage.DeleteAsync(metadata.FileId, ct);
         }
-
-        return metadata;
+        catch{}
+        try
+        {
+            await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
+        }
+        catch{}
+        throw;
     }
+
+    return metadata;
+}
     
     public async Task<FileMetadata> OverwriteAsync(string fileId, Stream content, string fileName, long size, CancellationToken ct)
     {
