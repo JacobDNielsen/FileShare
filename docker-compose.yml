@@ -21,6 +21,7 @@ x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 x-ca-build: &ca-build
   additional_contexts:
     ca: ./.dev-certs/ca
+    shared: ./src/shared
 
 services:
   #---------------------------------------------------------------

@@ -10,11 +10,13 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Build context, from docker-compose (.src/svc/storage)
+# Build context, from docker-compose (./src/svc/storage)
 COPY ["Storage.csproj", "."]
+COPY --from=shared FileShare.Infrastructure/FileShare.Infrastructure.csproj ../shared/FileShare.Infrastructure/
 RUN dotnet restore
 
 COPY . .
+COPY --from=shared FileShare.Infrastructure/ ../shared/FileShare.Infrastructure/
 RUN dotnet build -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish Image
