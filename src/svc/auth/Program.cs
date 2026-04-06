@@ -104,8 +104,17 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
-        return Results.Ok(new { port = ctx.Connection.LocalPort, clientCert = cert?.Subject });
-    }).AllowAnonymous();
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    }).AllowAnonymous().WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

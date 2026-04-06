@@ -9,29 +9,11 @@ using System.Security.Claims;
 using Storage.FileStorage;
 using Storage.Repositories;
 using System.ComponentModel;
-using System.Security.Cryptography.X509Certificates;
+using FileShareApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load client cert for mTLS backchannel when enabled
-var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
-X509Certificate2? clientCert = null;
-if (mtlsEnabled)
-{
-    var path = builder.Configuration["Mtls:ClientCertPath"];
-    var pw   = builder.Configuration["DEV_CERT_PASSWORD"];
-    if (!string.IsNullOrEmpty(path))
-    {
-        try
-        {
-            clientCert = X509CertificateLoader.LoadPkcs12FromFile(path, pw ?? string.Empty);
-        }
-        catch (Exception ex) when (builder.Environment.IsDevelopment())
-        {
-            Console.WriteLine($"[mTLS] Client cert failed to load: {ex.Message}");
-        }
-    }
-}
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -147,8 +129,17 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
-        return Results.Ok(new { port = ctx.Connection.LocalPort, clientCert = cert?.Subject });
-    }).AllowAnonymous();
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    }).AllowAnonymous().WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

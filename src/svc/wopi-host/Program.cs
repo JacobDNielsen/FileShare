@@ -6,31 +6,13 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
+using FileShareApp.Infrastructure;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-// Load client cert for mTLS outbound when enabled
-var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
-X509Certificate2? clientCert = null;
-if (mtlsEnabled)
-{
-    var path = builder.Configuration["Mtls:ClientCertPath"];
-    var pw   = builder.Configuration["DEV_CERT_PASSWORD"];
-    if (!string.IsNullOrEmpty(path))
-    {
-        try
-        {
-            clientCert = X509CertificateLoader.LoadPkcs12FromFile(path, pw ?? string.Empty);
-        }
-        catch (Exception ex) when (builder.Environment.IsDevelopment())
-        {
-            Console.WriteLine($"[mTLS] Client cert failed to load: {ex.Message}");
-        }
-    }
-}
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
@@ -126,32 +108,26 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
-// Register the typed HttpClient for communicating with the Storage microservice
-builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
-    client.Timeout = TimeSpan.FromSeconds(15);
-})
-.ConfigurePrimaryHttpMessageHandler(() =>
+// Register typed HttpClients for internal service communication
+HttpMessageHandler MtlsHandler()
 {
     var handler = new HttpClientHandler();
     if (clientCert is not null)
         handler.ClientCertificates.Add(clientCert);
     return handler;
-});
+}
+
+builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromSeconds(15);
+}).ConfigurePrimaryHttpMessageHandler(MtlsHandler);
 
 builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
-})
-.ConfigurePrimaryHttpMessageHandler(() =>
-{
-    var handler = new HttpClientHandler();
-    if (clientCert is not null)
-        handler.ClientCertificates.Add(clientCert);
-    return handler;
-});
+}).ConfigurePrimaryHttpMessageHandler(MtlsHandler);
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -164,8 +140,17 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/debug/mtls", (HttpContext ctx) =>
     {
         var cert = ctx.Connection.ClientCertificate;
-        return Results.Ok(new { port = ctx.Connection.LocalPort, clientCert = cert?.Subject });
-    }).AllowAnonymous();
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    }).AllowAnonymous().WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

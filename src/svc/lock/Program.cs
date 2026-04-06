@@ -6,29 +6,11 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.ComponentModel;
 using Lock.Data;
-using System.Security.Cryptography.X509Certificates;
+using FileShareApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load client cert for mTLS backchannel when enabled
-var mtlsEnabled = builder.Configuration.GetValue<bool>("Mtls:Enabled");
-X509Certificate2? clientCert = null;
-if (mtlsEnabled)
-{
-    var path = builder.Configuration["Mtls:ClientCertPath"];
-    var pw   = builder.Configuration["DEV_CERT_PASSWORD"];
-    if (!string.IsNullOrEmpty(path))
-    {
-        try
-        {
-            clientCert = X509CertificateLoader.LoadPkcs12FromFile(path, pw ?? string.Empty);
-        }
-        catch (Exception ex) when (builder.Environment.IsDevelopment())
-        {
-            Console.WriteLine($"[mTLS] Client cert failed to load: {ex.Message}");
-        }
-    }
-}
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
