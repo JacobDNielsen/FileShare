@@ -7,8 +7,8 @@ using Storage.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Storage.FileStorage;
 using Storage.Helpers;
-using System.IdentityModel.Tokens.Jwt;
 using Storage.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Storage.Services;
 
@@ -17,12 +17,14 @@ public class FileService : IFileService
     private readonly IFileRepository _repo;
     private readonly IFileStorage _storage;
     private readonly IOpenFgaTupleWriter _openFgaTupleWriter;
+    private readonly ILogger<FileService> _logger;
 
-        public FileService(IFileRepository repo, IFileStorage storage, IOpenFgaTupleWriter openFgaTupleWriter)
+        public FileService(IFileRepository repo, IFileStorage storage, IOpenFgaTupleWriter openFgaTupleWriter, ILogger<FileService> logger)
     {
         _repo = repo;
         _storage = storage;
         _openFgaTupleWriter  = openFgaTupleWriter;
+        _logger = logger;
     }
 
      public async Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct)
@@ -36,7 +38,7 @@ public class FileService : IFileService
     }
 
 
-    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, string userId, /*int ownerId,*/ long size, CancellationToken ct)
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, string userId, long size, CancellationToken ct)
     {
         var metadata = new FileMetadata
         {
@@ -53,22 +55,28 @@ public class FileService : IFileService
             await _storage.SaveAsync(metadata.FileId, content, ct);
 
             await _openFgaTupleWriter.WriteOwnerTupleAsync(userId, metadata.FileId, ct);
-            Console.WriteLine($"Upload by user:{userId}");
         }
-        catch
-    {
-        try
+        catch (Exception ex)
         {
-            await _storage.DeleteAsync(metadata.FileId, ct);
+            _logger.LogError(ex, "Upload failed for fileId:{FileId}", metadata.FileId);
+            try
+            {
+                await _storage.DeleteAsync(metadata.FileId, ct);
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogError(rollbackEx, "Rollback failed to delete blob for fileId:{FileId}", metadata.FileId);
+            }
+            try
+            {
+                await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogError(rollbackEx, "Rollback failed to delete metadata for fileId:{FileId}", metadata.FileId);
+            }
+            throw;
         }
-        catch{}
-        try
-        {
-            await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
-        }
-        catch{}
-        throw;
-    }
 
     return metadata;
 }

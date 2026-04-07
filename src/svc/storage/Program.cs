@@ -10,7 +10,6 @@ using Storage.FileStorage;
 using Storage.Repositories;
 using Storage.Configuration;
 using Storage.Interfaces;
-using Storage.Services;
 using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -105,8 +104,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.Configure<OpenFgaOptions>(
-    builder.Configuration.GetSection(OpenFgaOptions.SectionName));
+builder.Services.AddOptions<OpenFgaOptions>()
+    .Bind(builder.Configuration.GetSection(OpenFgaOptions.SectionName))
+    .Validate(config =>
+    {
+        return !string.IsNullOrWhiteSpace(config.BaseUrl) &&
+               !string.IsNullOrWhiteSpace(config.StoreId) &&
+               !string.IsNullOrWhiteSpace(config.AuthorizationModelId);
+    }, "Invalid OpenFGA configuration: BaseUrl, StoreId, and AuthorizationModelId are required")
+    .ValidateOnStart();
 
 builder.Services.AddHttpClient<IOpenFgaTupleWriter, OpenFgaTupleWriter>((sp, client) =>
 {

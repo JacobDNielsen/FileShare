@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using WopiHost.Dto;
 using System.Security.Principal;
-using WopiHost.Configuration;
 using System.Security.Claims;
 
 [ApiController]

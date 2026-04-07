@@ -107,11 +107,15 @@ services:
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       SwaggerGatewayPrefix: /storage
+      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - storage-db
       - auth
+      - openfga
 
   #---------------------------------------------------------------
   # Lock Service
@@ -168,12 +172,16 @@ services:
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
       Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
       SwaggerGatewayPrefix: /wopi
+      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - auth
       - storage
       - lock
+      - openfga
   
   #---------------------------------------------------------------
   # OpenFGA

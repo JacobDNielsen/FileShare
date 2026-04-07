@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Storage.Configuration;
 using Storage.Interfaces;
@@ -10,11 +11,13 @@ public class OpenFgaTupleWriter : IOpenFgaTupleWriter
 {
     private readonly HttpClient _httpClient;
     private readonly OpenFgaOptions _options;
+    private readonly ILogger<OpenFgaTupleWriter> _logger;
 
-    public OpenFgaTupleWriter(HttpClient httpClient, IOptions<OpenFgaOptions> options)
+    public OpenFgaTupleWriter(HttpClient httpClient, IOptions<OpenFgaOptions> options, ILogger<OpenFgaTupleWriter> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task WriteOwnerTupleAsync(string userId, string fileId, CancellationToken cancellationToken = default)
@@ -41,44 +44,36 @@ public class OpenFgaTupleWriter : IOpenFgaTupleWriter
             request,
             cancellationToken);
 
-        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        Console.WriteLine("OpenFGA tuple write:");
-        Console.WriteLine($"StoreId: {_options.StoreId}");
-        Console.WriteLine($"ModelId: {_options.AuthorizationModelId}");
-        Console.WriteLine($"User: user:{userId}");
-        Console.WriteLine($"Relation: owner");
-        Console.WriteLine($"Object: file:{fileId}");
-        Console.WriteLine($"Status: {(int)response.StatusCode}");
-        Console.WriteLine($"Response: {responseBody}");
+        _logger.LogDebug("OpenFGA tuple write: user=user:{UserId}, object=file:{FileId}, status={Status}",
+            userId, fileId, (int)response.StatusCode);
 
         response.EnsureSuccessStatusCode();
     }
 
-    private sealed class WriteTuplesRequest
+    private sealed record WriteTuplesRequest
     {
         [JsonPropertyName("writes")]
-        public WritesPayload Writes { get; set; } = new();
+        public required WritesPayload Writes { get; init; }
 
         [JsonPropertyName("authorization_model_id")]
-        public string AuthorizationModelId { get; set; } = string.Empty;
+        public required string AuthorizationModelId { get; init; }
     }
 
-    private sealed class WritesPayload
+    private sealed record WritesPayload
     {
         [JsonPropertyName("tuple_keys")]
-        public List<TupleKey> TupleKeys { get; set; } = [];
+        public required List<TupleKey> TupleKeys { get; init; }
     }
 
-    private sealed class TupleKey
+    private sealed record TupleKey
     {
         [JsonPropertyName("user")]
-        public string User { get; set; } = string.Empty;
+        public required string User { get; init; }
 
         [JsonPropertyName("relation")]
-        public string Relation { get; set; } = string.Empty;
+        public required string Relation { get; init; }
 
         [JsonPropertyName("object")]
-        public string Object { get; set; } = string.Empty;
+        public required string Object { get; init; }
     }
 }

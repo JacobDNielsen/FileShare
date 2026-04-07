@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using WopiHost.Configuration;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 
 
@@ -9,13 +10,16 @@ public class OpenFgaService : IOpenFgaService
 {
     private readonly HttpClient _httpClient;
     private readonly OpenFgaOptions _options;
+    private readonly ILogger<OpenFgaService> _logger;
 
     public OpenFgaService(
         HttpClient httpClient,
-        IOptions<OpenFgaOptions> options)
+        IOptions<OpenFgaOptions> options,
+        ILogger<OpenFgaService> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _logger = logger;
     }
 
     public Task<bool> CanViewFileAsync(string userId, string fileId, CancellationToken cancellationToken = default)
@@ -61,40 +65,40 @@ public class OpenFgaService : IOpenFgaService
 
             response.EnsureSuccessStatusCode();
 
-            var result = System.Text.Json.JsonSerializer.Deserialize<OpenFgaCheckResponse>(
-            responseBody,
+            var result = await response.Content.ReadFromJsonAsync<OpenFgaCheckResponse>(
             new System.Text.Json.JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            });
+            },
+            cancellationToken);
 
         return result?.Allowed ?? false;
 }
 
-    private sealed class OpenFgaCheckRequest
+    private sealed record OpenFgaCheckRequest
     {
         [JsonPropertyName("tuple_key")]
-        public OpenFgaTupleKey TupleKey { get; set; } = new();
+        public required OpenFgaTupleKey TupleKey { get; init; }
 
         [JsonPropertyName("authorization_model_id")]
-        public string AuthorizationModelId { get; set; } = string.Empty;
+        public required string AuthorizationModelId { get; init; }
     }
 
-    private sealed class OpenFgaTupleKey
+    private sealed record OpenFgaTupleKey
     {
         [JsonPropertyName("user")]
-        public string User { get; set; } = string.Empty;
+        public required string User { get; init; }
 
         [JsonPropertyName("relation")]
-        public string Relation { get; set; } = string.Empty;
+        public required string Relation { get; init; }
 
         [JsonPropertyName("object")]
-        public string Object { get; set; } = string.Empty;
+        public required string Object { get; init; }
     }
 
-    private sealed class OpenFgaCheckResponse
+    private sealed record OpenFgaCheckResponse
     {
         [JsonPropertyName("allowed")]
-        public bool Allowed { get; set; }
+        public bool Allowed { get; init; }
     }
 }
