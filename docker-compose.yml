@@ -107,11 +107,15 @@ services:
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       SwaggerGatewayPrefix: /storage
+      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - storage-db
       - auth
+      - openfga
 
   #---------------------------------------------------------------
   # Lock Service
@@ -168,14 +172,62 @@ services:
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
       Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
       SwaggerGatewayPrefix: /wopi
+      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - auth
       - storage
       - lock
+      - openfga
+  
+  #---------------------------------------------------------------
+  # OpenFGA
+  #---------------------------------------------------------------
+  openfga-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: openfga
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - openfga_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d openfga"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  openfga-migrate:
+    image: openfga/openfga:latest
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-db:5432/openfga?sslmode=disable
+    depends_on:
+      openfga-db:
+        condition: service_healthy
+
+  openfga:
+    image: openfga/openfga:latest
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-db:5432/openfga?sslmode=disable
+      OPENFGA_AUTHN_METHOD: none
+      OPENFGA_PLAYGROUND_ENABLED: "true"
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "3000:3000"
 
 volumes:
   auth_data:
   lock_data:
   storage_data:
+  openfga_data:

@@ -1,0 +1,15 @@
+meta {
+  name: Get Auth Models
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/stores/{{storeId}}/authorization-models
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+}
