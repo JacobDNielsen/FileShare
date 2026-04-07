@@ -48,6 +48,7 @@ public class OpenFgaService : IOpenFgaService
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
+            if (isDevelopment){
             Console.WriteLine("OpenFGA request:");
             Console.WriteLine($"StoreId: {_options.StoreId}");
             Console.WriteLine($"ModelId: {_options.AuthorizationModelId}");
@@ -56,6 +57,7 @@ public class OpenFgaService : IOpenFgaService
             Console.WriteLine($"Object: {obj}");
             Console.WriteLine($"Status: {(int)response.StatusCode}");
             Console.WriteLine($"Response: {responseBody}");
+            }
 
             response.EnsureSuccessStatusCode();
 
