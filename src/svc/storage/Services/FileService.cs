@@ -7,8 +7,8 @@ using Storage.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Storage.FileStorage;
 using Storage.Helpers;
-using System.IdentityModel.Tokens.Jwt;
 using Storage.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Storage.Services;
 
@@ -17,12 +17,14 @@ public class FileService : IFileService
     private readonly IFileRepository _repo;
     private readonly IFileStorage _storage;
     private readonly IOpenFgaTupleWriter _openFgaTupleWriter;
+    private readonly ILogger<FileService> _logger;
 
-        public FileService(IFileRepository repo, IFileStorage storage, IOpenFgaTupleWriter openFgaTupleWriter)
+        public FileService(IFileRepository repo, IFileStorage storage, IOpenFgaTupleWriter openFgaTupleWriter, ILogger<FileService> logger)
     {
         _repo = repo;
         _storage = storage;
         _openFgaTupleWriter  = openFgaTupleWriter;
+        _logger = logger;
     }
 
      public async Task<List<FileMetadata>> GetAllFilesMetadataAsync(CancellationToken ct)
@@ -56,14 +58,14 @@ public class FileService : IFileService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Upload failed for user:{userId}, fileId:{metadata.FileId}: {ex.Message}");
+            _logger.LogError(ex, "Upload failed for fileId:{FileId}", metadata.FileId);
             try
             {
                 await _storage.DeleteAsync(metadata.FileId, ct);
             }
             catch (Exception rollbackEx)
             {
-                Console.WriteLine($"Rollback failed to delete blob for fileId:{metadata.FileId}: {rollbackEx.Message}");
+                _logger.LogError(rollbackEx, "Rollback failed to delete blob for fileId:{FileId}", metadata.FileId);
             }
             try
             {
@@ -71,7 +73,7 @@ public class FileService : IFileService
             }
             catch (Exception rollbackEx)
             {
-                Console.WriteLine($"Rollback failed to delete metadata for fileId:{metadata.FileId}: {rollbackEx.Message}");
+                _logger.LogError(rollbackEx, "Rollback failed to delete metadata for fileId:{FileId}", metadata.FileId);
             }
             throw;
         }

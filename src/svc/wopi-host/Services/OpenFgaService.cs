@@ -50,8 +50,8 @@ public class OpenFgaService : IOpenFgaService
             request,
             cancellationToken);
 
-            _logger.LogDebug("OpenFGA check: user={User}, relation={Relation}, object={Object}, status={Status}",
-                user, relation, obj, (int)response.StatusCode);
+            _logger.LogDebug("OpenFGA check: relation={Relation}, object={Object}, status={Status}",
+                relation, obj, (int)response.StatusCode);
 
             response.EnsureSuccessStatusCode();
 
