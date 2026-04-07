@@ -36,7 +36,7 @@ public class FileService : IFileService
     }
 
 
-    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, string userId, /*int ownerId,*/ long size, CancellationToken ct)
+    public async Task<FileMetadata> UploadAsync(Stream content, string fileName, string userId, long size, CancellationToken ct)
     {
         var metadata = new FileMetadata
         {
@@ -53,22 +53,28 @@ public class FileService : IFileService
             await _storage.SaveAsync(metadata.FileId, content, ct);
 
             await _openFgaTupleWriter.WriteOwnerTupleAsync(userId, metadata.FileId, ct);
-            Console.WriteLine($"Upload by user:{userId}");
         }
-        catch
-    {
-        try
+        catch (Exception ex)
         {
-            await _storage.DeleteAsync(metadata.FileId, ct);
+            Console.WriteLine($"Upload failed for user:{userId}, fileId:{metadata.FileId}: {ex.Message}");
+            try
+            {
+                await _storage.DeleteAsync(metadata.FileId, ct);
+            }
+            catch (Exception rollbackEx)
+            {
+                Console.WriteLine($"Rollback failed to delete blob for fileId:{metadata.FileId}: {rollbackEx.Message}");
+            }
+            try
+            {
+                await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
+            }
+            catch (Exception rollbackEx)
+            {
+                Console.WriteLine($"Rollback failed to delete metadata for fileId:{metadata.FileId}: {rollbackEx.Message}");
+            }
+            throw;
         }
-        catch{}
-        try
-        {
-            await _repo.DeleteFileMetadataAsync(metadata.FileId, ct);
-        }
-        catch{}
-        throw;
-    }
 
     return metadata;
 }

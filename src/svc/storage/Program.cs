@@ -104,8 +104,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.Configure<OpenFgaOptions>(
-    builder.Configuration.GetSection(OpenFgaOptions.SectionName));
+builder.Services.AddOptions<OpenFgaOptions>()
+    .Bind(builder.Configuration.GetSection(OpenFgaOptions.SectionName))
+    .Validate(config =>
+    {
+        return !string.IsNullOrWhiteSpace(config.BaseUrl) &&
+               !string.IsNullOrWhiteSpace(config.StoreId) &&
+               !string.IsNullOrWhiteSpace(config.AuthorizationModelId);
+    }, "Invalid OpenFGA configuration: BaseUrl, StoreId, and AuthorizationModelId are required")
+    .ValidateOnStart();
 
 builder.Services.AddHttpClient<IOpenFgaTupleWriter, OpenFgaTupleWriter>((sp, client) =>
 {
