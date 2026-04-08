@@ -7,10 +7,13 @@ using System.Security.Claims;
 using System.ComponentModel;
 using Lock.Data;
 using FileShareApp.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, startupLogger);
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

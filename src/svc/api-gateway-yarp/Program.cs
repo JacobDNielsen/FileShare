@@ -1,9 +1,12 @@
 using System.Security.Cryptography.X509Certificates;
 using FileShareApp.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, startupLogger);
 
 //Add YARP from configuration
 var reverseProxy = builder.Services.AddReverseProxy()

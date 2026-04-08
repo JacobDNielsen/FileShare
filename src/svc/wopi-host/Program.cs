@@ -7,12 +7,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using FileShareApp.Infrastructure;
+using Microsoft.Extensions.Logging;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, startupLogger);
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
