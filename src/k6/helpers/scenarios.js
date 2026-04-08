@@ -74,7 +74,7 @@ export function scenarioOption(scenarioName) {
     ...getConnectionOptions(),
     ...picked,
     thresholds: {
-      http_req_failed: ["rate<0.5"], // transport errors
+      http_req_failed: ["rate<0.02"], // transport errors
       checks: ["rate>0.98"], // % of checks that must pass
       http_req_duration: ["p(95)<1000"],
     },
