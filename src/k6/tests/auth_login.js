@@ -19,7 +19,7 @@ export default function () {
     password: PASSWORD,
   });
 
-  const response = http.post(TARGET_URL, body, {
+  const response = http.post(`${TARGET_URL}/api/auth/login`, body, {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",

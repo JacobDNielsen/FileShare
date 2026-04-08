@@ -23,7 +23,7 @@ export default function () {
   const user = randomUser();
 
   const signupRes = http.post(
-    `${TARGET_URL}/api/auth/signup`,
+    `${TARGET_URL}/auth/signup`,
     JSON.stringify(user),
     {
       headers: { "Content-Type": "application/json" },
@@ -37,8 +37,6 @@ export default function () {
     }
   );
 
-  console.log("SIGNUP STATUS:", signupRes.status);
-  console.log("SIGNUP RESPONSE:", signupRes.body);
 
   check(signupRes, {
     "signup 201": (r) => r.status === 201,
@@ -57,7 +55,7 @@ export default function () {
    throw new Error("Token not found in signup response");
  }
 
- const storageRes = http.get(`${TARGET_URL}/api/storage`, {
+ const storageRes = http.get(`${TARGET_URL}/storage`, {
     headers: {
       Authorization: `${tokenType} ${token}`,
      
@@ -70,10 +68,6 @@ export default function () {
     },
     timeout:"30s",
  });
-
-
-  console.log("STORAGE STATUS:", storageRes.status);
-  console.log("STORAGE RESPONSE:", storageRes.body);
 
   check(storageRes, {
     "storage 200": (r) => r.status === 200,

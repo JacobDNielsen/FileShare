@@ -1,15 +1,14 @@
 import http from "k6/http";
 import { check } from "k6";
-import { getEnvVariable } from "../helpers/env.js"
-import { scenarioOption } from "../helpers/scenarios.js"
+import { getEnvVariable } from "../helpers/env.js";
+import { scenarioOption } from "../helpers/scenarios.js";
 
-const SCENARIO = getEnvVariable("SCENARIO", { fallback: "stress" })
+const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
+const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
 
 export const options = scenarioOption(SCENARIO);
 
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
-
-const binFile = open("../storage files/Lystbådehavne-på-Bornholm.docx")
 
 function randomUser() {
   const unique = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -22,25 +21,22 @@ function randomUser() {
 
 export default function () {
   const user = randomUser();
-  const data = {
-    field: "test",
-    file: http.file(binFile, "test.bin")
-  }
 
   const signupRes = http.post(
-    `${TARGET_URL}/auth/signup`,
+    `${TARGET_URL}/api/auth/signup`,
     JSON.stringify(user),
     {
       headers: { "Content-Type": "application/json" },
       tags: { 
         name: "auth_signup" ,
         scenario: SCENARIO,
-      }
+        protocol: TARGET_URL.startsWith("https") ? "https" : "http",
+       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
+      },
+      timeout:"30s",
     }
   );
 
-  console.log("SIGNUP STATUS:", signupRes.status);
-  console.log("SIGNUP RESPONSE:", signupRes.body);
 
   check(signupRes, {
     "signup 201": (r) => r.status === 201,
@@ -59,24 +55,21 @@ export default function () {
    throw new Error("Token not found in signup response");
  }
 
-
- const storageRes = http.post(`${TARGET_URL}/storage/upload`, data, {
+ const storageRes = http.get(`${TARGET_URL}/api/storage`, {
     headers: {
       Authorization: `${tokenType} ${token}`,
-      
+     
     },
     tags: {
-       name: "storage_post_file",
+       name: "storage_get_files",
        scenario: SCENARIO,
-    }
-    
+       protocol: TARGET_URL.startsWith("https") ? "https" : "http",
+       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
+    },
+    timeout:"30s",
  });
- 
-
-  console.log("STORAGE STATUS:", storageRes.status);
-  console.log("STORAGE RESPONSE:", storageRes.body);
 
   check(storageRes, {
-    "storage 201": (r) => r.status === 201,
+    "storage 200": (r) => r.status === 200,
   });
 }

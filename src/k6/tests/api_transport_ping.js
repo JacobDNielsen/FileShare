@@ -6,16 +6,12 @@ import { scenarioOption } from "../helpers/scenarios.js";
 const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
 const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
 
-export const options = {
-  ...scenarioOption(SCENARIO),
-  insecureSkipTLSVerify: true,
-  noConnectionReuse: true,
-};
+export const options = scenarioOption(SCENARIO);
 
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
 
 export default function () {
-  const response = http.get(`${TARGET_URL}/benchmark/ping`, {
+  const response = http.get(`${TARGET_URL}/auth/benchmark/ping`, {
     tags: {
       test: "transport_ping",
       scenario: SCENARIO,
