@@ -28,6 +28,7 @@ services:
       ReverseProxy__Clusters__storage__Destinations__storage-1__Address: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__lock__Destinations__lock-1__Address: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address: "${INTERNAL_SERVICE_SCHEME}://wopi-host:${INTERNAL_SERVICE_PORT}/"
+
     volumes:
       - *https-mount
     depends_on:
@@ -221,10 +222,6 @@ services:
     depends_on:
       openfga-migrate:
         condition: service_completed_successfully
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-      - "3000:3000"
 
 volumes:
   auth_data:
