@@ -1,0 +1,24 @@
+meta {
+  name: Sign up
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/authentication/signup
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "mads",
+    "email": "mads",
+    "password": "mads",
+    "locale": "mads"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

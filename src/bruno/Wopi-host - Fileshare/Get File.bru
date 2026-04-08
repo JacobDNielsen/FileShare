@@ -1,0 +1,19 @@
+meta {
+  name: Get File
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/wopi/files/{{fileId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: 
+}
+
+settings {
+  encodeUrl: true
+}
