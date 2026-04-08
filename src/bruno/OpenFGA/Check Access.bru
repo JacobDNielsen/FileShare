@@ -1,0 +1,26 @@
+meta {
+  name: Check Access
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/stores/{{storeId}}/check
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "tuple_key": {
+      "user": "user:2",
+      "relation": "owner",
+      "object": "file:81ea5c71585a495ca1366eb416f58eae"
+    },
+    "authorization_model_id": "{{authorizationModelId}}"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
