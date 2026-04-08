@@ -12,7 +12,7 @@ using FileShareApp.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');

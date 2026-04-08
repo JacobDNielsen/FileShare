@@ -10,7 +10,7 @@ using FileShareApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

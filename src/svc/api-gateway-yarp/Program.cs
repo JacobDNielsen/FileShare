@@ -3,7 +3,7 @@ using FileShareApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, builder.Environment.IsDevelopment());
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration);
 
 //Add YARP from configuration
 var reverseProxy = builder.Services.AddReverseProxy()
