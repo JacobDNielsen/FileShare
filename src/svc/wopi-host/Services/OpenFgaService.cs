@@ -1,9 +1,9 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
-using WopiHost.Configuration;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
-
+using System.Net.Http.Json;
+using System.Security.Claims;
 
 
 public class OpenFgaService : IOpenFgaService
@@ -22,83 +22,73 @@ public class OpenFgaService : IOpenFgaService
         _logger = logger;
     }
 
-    public Task<bool> CanViewFileAsync(string userId, string fileId, CancellationToken cancellationToken = default)
-        => CheckAsync($"user:{userId}", "can_view", $"file:{fileId}", cancellationToken);
+     public Task<bool> CanReadFileAsync(string userId, string fileId, CancellationToken ct = default) =>
+        CheckAsync(
+            user: ToFgaUser(userId),
+            relation: "can_read",
+            obj: ToFgaFile(fileId),
+            ct);
 
-    public Task<bool> CanEditFileAsync(string userId, string fileId, CancellationToken cancellationToken = default)
-        => CheckAsync($"user:{userId}", "can_edit", $"file:{fileId}", cancellationToken);
+    public Task<bool> CanWriteFileAsync(string userId, string fileId, CancellationToken ct = default) =>
+        CheckAsync(
+            user: ToFgaUser(userId),
+            relation: "can_write",
+            obj: ToFgaFile(fileId),
+            ct);
 
-    private async Task<bool> CheckAsync(
-        string user,
-        string relation,
-        string obj,
-        CancellationToken cancellationToken)
+    public Task<bool> CanDeleteFileAsync(string userId, string fileId, CancellationToken ct = default) =>
+        CheckAsync(
+            user: ToFgaUser(userId),
+            relation: "can_delete",
+            obj: ToFgaFile(fileId),
+            ct);
+
+    public Task<bool> CanUploadToPatientAsync(string userId, string patientId, CancellationToken ct = default) =>
+        CheckAsync(
+            user: ToFgaUser(userId),
+            relation: "can_upload_files",
+            obj: ToFgaPatient(patientId),
+            ct);
+
+    private async Task<bool> CheckAsync(string user, string relation, string obj, CancellationToken ct)
     {
-        var request = new OpenFgaCheckRequest
+        var request = new CheckRequest
         {
-            TupleKey = new OpenFgaTupleKey
+            AuthorizationModelId = _options.AuthorizationModelId,
+            TupleKey = new TupleKey
             {
                 User = user,
                 Relation = relation,
                 Object = obj
-            },
-            AuthorizationModelId = _options.AuthorizationModelId
+            }
         };
 
-        using var response = await _httpClient.PostAsJsonAsync(
+        var response = await _httpClient.PostAsJsonAsync(
             $"/stores/{_options.StoreId}/check",
             request,
-            cancellationToken);
+            ct);
 
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(ct);
 
-            if (isDevelopment){
-            Console.WriteLine("OpenFGA request:");
-            Console.WriteLine($"StoreId: {_options.StoreId}");
-            Console.WriteLine($"ModelId: {_options.AuthorizationModelId}");
-            Console.WriteLine($"User: {user}");
-            Console.WriteLine($"Relation: {relation}");
-            Console.WriteLine($"Object: {obj}");
-            Console.WriteLine($"Status: {(int)response.StatusCode}");
-            Console.WriteLine($"Response: {responseBody}");
-            }
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError(
+                "OpenFGA check failed. Status={StatusCode}, User={User}, Relation={Relation}, Object={Object}, Body={Body}",
+                (int)response.StatusCode, user, relation, obj, body);
 
-            response.EnsureSuccessStatusCode();
+            return false;
+        }
 
-            var result = await response.Content.ReadFromJsonAsync<OpenFgaCheckResponse>(
-            new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            },
-            cancellationToken);
+        var result = System.Text.Json.JsonSerializer.Deserialize<CheckResponse>(body);
+
+        _logger.LogInformation(
+            "OpenFGA check result. User={User}, Relation={Relation}, Object={Object}, Allowed={Allowed}",
+            user, relation, obj, result?.Allowed);
 
         return result?.Allowed ?? false;
-}
-
-    private sealed record OpenFgaCheckRequest
-    {
-        [JsonPropertyName("tuple_key")]
-        public required OpenFgaTupleKey TupleKey { get; init; }
-
-        [JsonPropertyName("authorization_model_id")]
-        public required string AuthorizationModelId { get; init; }
     }
 
-    private sealed record OpenFgaTupleKey
-    {
-        [JsonPropertyName("user")]
-        public required string User { get; init; }
-
-        [JsonPropertyName("relation")]
-        public required string Relation { get; init; }
-
-        [JsonPropertyName("object")]
-        public required string Object { get; init; }
-    }
-
-    private sealed record OpenFgaCheckResponse
-    {
-        [JsonPropertyName("allowed")]
-        public bool Allowed { get; init; }
-    }
+    private static string ToFgaUser(string userId) => $"user:{userId}";
+    private static string ToFgaFile(string fileId) => $"file:{fileId}";
+    private static string ToFgaPatient(string patientId) => $"patient:{patientId}";
 }

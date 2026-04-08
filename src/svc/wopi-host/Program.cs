@@ -6,7 +6,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using WopiHost.Configuration;
+using Microsoft.Extensions.Options;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -109,14 +109,15 @@ builder.Services.AddOptions<OpenFgaOptions>()
         return !string.IsNullOrWhiteSpace(config.BaseUrl) &&
                !string.IsNullOrWhiteSpace(config.StoreId) &&
                !string.IsNullOrWhiteSpace(config.AuthorizationModelId);
-    }, "Invalid OpenFGA configuration: BaseUrl, StoreId, and AuthorizationModelId are required")
+    }, "Invalid OpenFGA configuration")
     .ValidateOnStart();
 
 builder.Services.AddHttpClient<IOpenFgaService, OpenFgaService>((sp, client) =>
 {
-    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenFgaOptions>>().Value;
+    var options = sp.GetRequiredService<IOptions<OpenFgaOptions>>().Value;
     client.BaseAddress = new Uri(options.BaseUrl);
 });
+
 // Register the typed HttpClient for communicating with the Storage microservice
 builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {

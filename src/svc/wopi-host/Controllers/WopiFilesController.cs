@@ -32,7 +32,7 @@ public sealed class WopiFilesController : ControllerBase
             return Unauthorized();
         }
         
-        var allowed = await _openFgaService.CanViewFileAsync(userId, fileId, ct);
+        var allowed = await _openFgaService.CanReadFileAsync(userId, fileId, ct);
 
         if (!allowed)
         {
