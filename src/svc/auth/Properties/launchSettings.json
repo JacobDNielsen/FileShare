@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "http": {
@@ -19,6 +19,9 @@
       "applicationUrl": "https://localhost:5040;http://localhost:5039",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "Kestrel__Endpoints__Http__Url": "http://localhost:5039",
+        "Kestrel__Endpoints__Https__Url": "https://localhost:5040",
+        "Kestrel__Certificates__Default__Path": "../../../.dev-certs/pfx/fileshare-server.pfx",
         "Authentication__Jwt__Issuer": "https://localhost:5040",
         "SwaggerGatewayPrefix": "/auth"
       }
@@ -34,6 +37,7 @@
         "Kestrel__Endpoints__Https__Url": "https://localhost:5040",
         "Kestrel__Endpoints__Mtls__Url": "https://localhost:5041",
         "Kestrel__Endpoints__Mtls__ClientCertificateMode": "RequireCertificate",
+        "Kestrel__Certificates__Default__Path": "../../../.dev-certs/pfx/fileshare-server.pfx",
         "Authentication__Jwt__Issuer": "https://localhost:5041",
         "SwaggerGatewayPrefix": "/auth"
       }
