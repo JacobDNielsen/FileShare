@@ -6,7 +6,7 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # If false, values are read from the configuration block below and .env file. 
 # If true, the user is prompted for values in the terminal, with defaults from the configuration block and .env.
-INTERACTIVE_MODE=false 
+INTERACTIVE_MODE=true 
 
 TEST_NAME="auth_login"
 PROTO="https"
@@ -132,8 +132,8 @@ SCENARIOS=(smoke stress spike breakpoint)
 
 validate_proto() {
   case "$1" in
-    http|https) ;;
-    *) fail "Protocol must be http or https. Got: $1" ;;
+    http|https|mtls) ;;
+    *) fail "Protocol must be http, https, or mtls. Got: $1" ;;
   esac
 }
 
@@ -343,6 +343,14 @@ build_env_args() {
   if [[ -n "${PASSWORD:-}" ]]; then
     ENV_ARGS+=(-e "PASSWORD=$PASSWORD")
   fi
+
+  if [[ -n "${CLIENT_CERT_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
+  fi
+
+  if [[ -n "${CLIENT_KEY_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
+  fi
 }
 
 write_test_info() {
@@ -412,7 +420,7 @@ Options:
   --interactive           Force interactive mode for this run
   --manual                Force manual mode for this run
   --test, -t              Test file name without .js
-  --proto, -p             Protocol: http or https
+  --proto, -p             Protocol: http, https, or mtls
   --scenario, -s          Scenario: ${SCENARIOS[*]}
   --conn-mode             Connection mode: no-reuse | no-vu-reuse
   --target-url            Full target URL, skips env-based URL resolution
@@ -554,7 +562,7 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
     prompt_select TEST_NAME "Available tests:" "$TEST_NAME" "${available_tests[@]}"
   fi
 
-  prompt_select PROTO "Choose protocol:" "$PROTO" http https
+  prompt_select PROTO "Choose protocol:" "$PROTO" http https mtls
   prompt_select SCENARIO "Choose scenario:" "$SCENARIO" "${SCENARIOS[@]}"
   prompt_input CONNECTION_MODE "Connection mode override (empty = default k6 behavior, or: no-reuse, no-vu-reuse)" "$CONNECTION_MODE" false true
   prompt_input TARGET_URL "Target URL override for this run only (press Enter to use .env URL resolution)" "$TARGET_URL" false true

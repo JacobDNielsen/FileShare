@@ -16,3 +16,21 @@ export function getEnvVariable(variableName, options = {}) {
 
   return undefined;
 }
+
+export function getTlsOptions() {
+  const certPath = getEnvVariable("CLIENT_CERT_PATH");
+  const keyPath = getEnvVariable("CLIENT_KEY_PATH");
+  const skipVerify = getEnvVariable("INSECURE_SKIP_TLS_VERIFY", { fallback: "false" });
+
+  const opts = {};
+
+  if (skipVerify === "true") {
+    opts.insecureSkipTLSVerify = true;
+  }
+
+  if (certPath && keyPath) {
+    opts.tlsAuth = [{ cert: open(certPath), key: open(keyPath) }];
+  }
+
+  return opts;
+}

@@ -1,12 +1,12 @@
 import http from "k6/http";
 import { check } from "k6";
-import { getEnvVariable } from "../helpers/env.js";
+import { getEnvVariable, getTlsOptions } from "../helpers/env.js";
 import { scenarioOption } from "../helpers/scenarios.js";
 
 const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
 const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
 
-export const options = scenarioOption(SCENARIO);
+export const options = { ...scenarioOption(SCENARIO), ...getTlsOptions() };
 
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
 
