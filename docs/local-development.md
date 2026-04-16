@@ -35,7 +35,6 @@ The project supports three internal transport modes. Set the `.env` file for the
 #### HTTP mode
 
 ```env
-DEV_CERT_PASSWORD=your-password-here
 INTERNAL_SERVICE_SCHEME=http
 INTERNAL_SERVICE_PORT=8080
 INTERNAL_SERVICE_USE_MTLS=false
@@ -46,7 +45,7 @@ INTERNAL_SERVICE_USE_MTLS=false
 Requires cert setup - see [https-certificate.md](https-certificate.md):
 
 ```env
-DEV_CERT_PASSWORD=your-password-here
+DEV_SERVER_CERT_PASSWORD=your-password-here
 INTERNAL_SERVICE_SCHEME=https
 INTERNAL_SERVICE_PORT=8443
 INTERNAL_SERVICE_USE_MTLS=false
@@ -57,7 +56,8 @@ INTERNAL_SERVICE_USE_MTLS=false
 Requires cert setup - see [https-certificate.md](https-certificate.md):
 
 ```env
-DEV_CERT_PASSWORD=your-password-here
+DEV_SERVER_CERT_PASSWORD=your-password-here
+DEV_CLIENT_CERT_PASSWORD=your-password-here
 INTERNAL_SERVICE_SCHEME=https
 INTERNAL_SERVICE_PORT=9443
 INTERNAL_SERVICE_USE_MTLS=true
@@ -104,6 +104,34 @@ Run each service individually. All five services must be started for the full st
   - JWT signing key (Auth service only) - see [authentication_secret.md](authentication_secret.md)
 - For HTTPS/mTLS: development certificates must exist - see [https-certificate.md](https-certificate.md)
 
+### Inject certificate passwords via user secrets
+
+Cert paths are set in `launchSettings.json`, but passwords should not be committed. Instead set them via user secrets - the value is the same password used when generating the certificate (see [https-certificate.md](https-certificate.md)).
+
+**HTTPS and mTLS profiles** — both use `fileshare-server.pfx` as the server cert. The cert path is set per-profile in `launchSettings.json` via `Kestrel__Certificates__Default__Path`. The password is stored under `Kestrel:Certificates:Default:Password` in user secrets — this is under `Kestrel:Certificates`, not `Kestrel:Endpoints`, so it doesn't create a partial endpoint section and won't cause "endpoint X is missing Url" errors across profiles.
+
+`Kestrel:Certificates:Default:Password` = value of `DEV_SERVER_CERT_PASSWORD` (all five services):
+
+```powershell
+dotnet user-secrets set "Kestrel:Certificates:Default:Password" "<your-password-here>" --project src/svc/auth/Auth.csproj
+dotnet user-secrets set "Kestrel:Certificates:Default:Password" "<your-password-here>" --project src/svc/api-gateway-yarp/ApiGatewayYarp.csproj
+dotnet user-secrets set "Kestrel:Certificates:Default:Password" "<your-password-here>" --project src/svc/storage/Storage.csproj
+dotnet user-secrets set "Kestrel:Certificates:Default:Password" "<your-password-here>" --project src/svc/lock/Lock.csproj
+dotnet user-secrets set "Kestrel:Certificates:Default:Password" "<your-password-here>" --project src/svc/wopi-host/WopiHost.csproj
+```
+
+**mTLS profile** - additionally requires the outbound client cert password (`fileshare-client.pfx` is a separate cert):
+
+
+`Mtls:ClientCertPassword` = value of `DEV_CLIENT_CERT_PASSWORD` (storage, lock, wopi-host, gateway):
+
+```powershell
+dotnet user-secrets set "Mtls:ClientCertPassword" "<your-password-here>" --project src/svc/api-gateway-yarp/ApiGatewayYarp.csproj
+dotnet user-secrets set "Mtls:ClientCertPassword" "<your-password-here>" --project src/svc/storage/Storage.csproj
+dotnet user-secrets set "Mtls:ClientCertPassword" "<your-password-here>" --project src/svc/lock/Lock.csproj
+dotnet user-secrets set "Mtls:ClientCertPassword" "<your-password-here>" --project src/svc/wopi-host/WopiHost.csproj
+```
+
 ### HTTP profile
 
 ```bash
@@ -133,17 +161,6 @@ The `mtls` profile configures each downstream service with three Kestrel endpoin
 
 All five services must use the `mtls` profile. The client certificate must exist before starting (see [https-certificate.md](https-certificate.md)).
 
-#### Inject the shared client-cert password via user secrets
-
-For local `dotnet run`, configure the shared `DEV_CERT_PASSWORD` secret in each mTLS-enabled service so the client certificate can be loaded at runtime:
-
-```powershell
-dotnet user-secrets set "DEV_CERT_PASSWORD" "<your-password>" --project src/svc/api-gateway-yarp/ApiGatewayYarp.csproj
-dotnet user-secrets set "DEV_CERT_PASSWORD" "<your-password>" --project src/svc/storage/Storage.csproj
-dotnet user-secrets set "DEV_CERT_PASSWORD" "<your-password>" --project src/svc/lock/Lock.csproj
-dotnet user-secrets set "DEV_CERT_PASSWORD" "<your-password>" --project src/svc/wopi-host/WopiHost.csproj
-```
-
 ### Overview of ports
 
 | Service     | HTTP port | HTTPS port | mTLS port |
@@ -155,5 +172,21 @@ dotnet user-secrets set "DEV_CERT_PASSWORD" "<your-password>" --project src/svc/
 | WOPI Host   | 5018      | 5019       | 5020      |
 
 Start the gateway last (or allow it to retry) since it depends on the other services being up.
+
+---
+
+## Windows-specific notes
+
+**curl:** Add `--ssl-no-revoke` to avoid Schannel certificate revocation errors with mkcert certs:
+
+```bash
+curl --ssl-no-revoke https://localhost:5040/benchmark/ping
+```
+
+**k6 / non-browser clients:** On Windows, use the IPv6 loopback `[::1]` instead of `localhost` — a system service (CDPSvc) can occupy the IPv4 address on certain ports, causing connection failures regardless of whether the server is running in Docker or via `dotnet run`:
+
+```env
+AUTH_BASE_HTTPS=https://[::1]:5040
+```
 
 ---
