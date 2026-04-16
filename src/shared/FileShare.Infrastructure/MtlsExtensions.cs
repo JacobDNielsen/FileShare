@@ -15,7 +15,7 @@ public static class MtlsExtensions
         if (!config.GetValue<bool>("Mtls:Enabled")) return null;
 
         var path = config["Mtls:ClientCertPath"];
-        var pw = config["DEV_CERT_PASSWORD"];
+        var pw = config["Mtls:ClientCertPassword"];
 
         try
         {
@@ -23,7 +23,7 @@ public static class MtlsExtensions
                 throw new InvalidOperationException("Mtls:ClientCertPath is required when Mtls:Enabled is true.");
 
             if (string.IsNullOrWhiteSpace(pw))
-                throw new InvalidOperationException("DEV_CERT_PASSWORD is required when Mtls:Enabled is true.");
+                throw new InvalidOperationException("Mtls:ClientCertPassword is required when Mtls:Enabled is true.");
 
             var cert = X509CertificateLoader.LoadPkcs12FromFile(path, pw);
             logger?.LogInformation("Loaded mTLS client certificate from {ClientCertPath}.", path);
