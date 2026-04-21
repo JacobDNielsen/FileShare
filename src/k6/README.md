@@ -1,15 +1,13 @@
 # k6 Performance Test Runner
 
-This folder contains a small k6-based test setup for comparing HTTP and HTTPS performance in the FileShare services.
+This folder contains a small k6-based test setup for comparing HTTP, HTTPS, and mTLS performance in the FileShare services.
 
 ## Purpose
 
-The main goal is to make it easy to:
-
-- compare HTTP vs. HTTPS
-- compare default connection reuse vs. forced reconnects
-- run quick smoke tests and heavier stress-style tests
-- collect repeatable benchmark results
+- Compare HTTP vs. HTTPS vs. mTLS
+- Compare default connection reuse vs. forced reconnects
+- Run quick smoke tests and heavier stress-style tests
+- Collect repeatable benchmark results
 
 ## Note about `run.sh`
 
@@ -17,40 +15,91 @@ The `run.sh` helper script was created with the use of Generative AI and then ad
 
 ## Files
 
-- `run.sh`  
-  Interactive/manual runner for k6 tests.
-
-- `helpers/env.js`  
-  Reads environment variables safely.
-
-- `helpers/scenarios.js`  
-  Defines shared k6 scenarios and optional connection reuse overrides.
-
-- `tests/auth_login.js`  
-  Application-level benchmark for the auth login endpoint.
-
-- `tests/auth_transport_ping.js` or `tests/transport_ping.js`  
-  Minimal transport-focused benchmark endpoint test.
+- `run.sh` — Interactive/manual runner for k6 tests
+- `helpers/env.js` — Reads environment variables safely
+- `helpers/scenarios.js` — Defines shared k6 scenarios and optional connection reuse overrides
+- `tests/storage_direct_ping.js` — Baseline: k6 → storage ping directly
+- `tests/gateway_storage_ping.js` — Baseline: k6 → gateway → storage ping
+- `tests/storage_direct_files.js` — Realistic: upload + list files directly on storage
+- `tests/gateway_storage_files.js` — Realistic: upload + list files via gateway
+- `notebooks/metrics_visualization.ipynb` — Jupyter notebook for visualizing results
 
 ## Prerequisites
 
 - [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 - A Bash-compatible shell (for example Git Bash on Windows)
-- A `.env` file in this folder
+- A `.env` file in this folder (copy from `.env.example`)
+
+## Running tests
+
+### With `run.sh`
+
+```bash
+./scripts/run.sh
+```
+
+Interactive mode prompts for test, protocol, and scenario. Or pass arguments directly:
+
+```bash
+./scripts/run.sh --test storage_direct_ping --proto https --scenario smoke
+./scripts/run.sh --test gateway_storage_files --proto mtls --scenario stress
+```
+
+Results are saved to `results/{test}/{proto}/{scenario}/{timestamp}/`.
+
+### Manually with k6
+
+```bash
+# Ping tests — only TARGET_URL needed
+k6 run tests/storage_direct_ping.js \
+  -e TARGET_URL=https://localhost:5135 \
+  -e SCENARIO=smoke \
+  -e INSECURE_SKIP_TLS_VERIFY=true
+
+# File tests — also need credentials and path vars
+k6 run tests/storage_direct_files.js \
+  -e TARGET_URL=https://localhost:5135 \
+  -e AUTH_URL=https://localhost:5040 \
+  -e AUTH_LOGIN_PATH=/authentication/login \
+  -e STORAGE_UPLOAD_PATH=/wopi/files/upload \
+  -e STORAGE_LIST_PATH=/wopi/files \
+  -e USERNAME=demo_user \
+  -e PASSWORD=demo_user \
+  -e INSECURE_SKIP_TLS_VERIFY=true
+```
 
 ## Environment Variables
 
-Example `.env`:
+Copy `.env.example` to `.env` and fill in your values.
 
-```env
-USERNAME=your-test-user
-PASSWORD=your-test-password
+### URL resolution strategy (`run.sh`)
 
-AUTH_BASE_HTTP=http://localhost:5039
-AUTH_BASE_HTTPS=https://localhost:5040
+`run.sh` resolves `TARGET_URL` for each test using one of two strategies, in order of precedence:
 
-AUTH_LOGIN_PATH=/authentication/login
-AUTH_TRANSPORT_PING_PATH=/benchmark/ping
+1. **Full URL** — set `{TEST}_{PROTO}` directly, e.g. `STORAGE_DIRECT_FILES_HTTPS=https://localhost:5135`
+2. **Base + path** — set `{SERVICE}_BASE_{PROTO}` and `{TEST}_PATH`, e.g. `STORAGE_BASE_HTTPS + STORAGE_DIRECT_PING_PATH`
 
-INSECURE_SKIP_TLS_VERIFY=true
-```
+Use strategy 1 to override a single test URL without touching the shared base. Use strategy 2 when multiple tests share the same service base URL.
+
+### Variable reference
+
+| Variable | Used by | Description |
+|---|---|---|
+| `USERNAME` | file tests | Login username |
+| `PASSWORD` | file tests | Login password |
+| `INSECURE_SKIP_TLS_VERIFY` | all | Skip TLS cert verification |
+| `CLIENT_CERT_PATH` | mTLS | Path to client cert (PEM) |
+| `CLIENT_KEY_PATH` | mTLS | Path to client key (PEM) |
+| `AUTH_LOGIN_PATH` | `storage_direct_files` | Auth service login endpoint path |
+| `AUTH_URL` | `storage_direct_files` | Auth service base URL — must match the proto being tested |
+| `STORAGE_BASE_{PROTO}` | `storage_direct_ping` | Storage service base URL (base+path strategy) |
+| `STORAGE_DIRECT_PING_PATH` | `storage_direct_ping` | Path to storage ping endpoint |
+| `STORAGE_DIRECT_FILES_{PROTO}` | `storage_direct_files` | Storage service base URL (full URL strategy) |
+| `STORAGE_UPLOAD_PATH` | `storage_direct_files` | Path to storage upload endpoint |
+| `STORAGE_LIST_PATH` | `storage_direct_files` | Path to storage list endpoint |
+| `GATEWAY_BASE_{PROTO}` | `gateway_storage_ping` | Gateway base URL (base+path strategy) |
+| `GATEWAY_STORAGE_PING_PATH` | `gateway_storage_ping` | Path to storage ping via gateway |
+| `GATEWAY_STORAGE_FILES_{PROTO}` | `gateway_storage_files` | Gateway base URL (full URL strategy) |
+| `GATEWAY_AUTH_LOGIN_PATH` | `gateway_storage_files` | Path to auth login via gateway |
+| `GATEWAY_STORAGE_UPLOAD_PATH` | `gateway_storage_files` | Path to storage upload via gateway |
+| `GATEWAY_STORAGE_LIST_PATH` | `gateway_storage_files` | Path to storage list via gateway |
