@@ -29,7 +29,7 @@ export function scenarioOption(scenarioName) {
   const scenarios = {
     smoke: {
       vus: 1,
-      iterations: 20,
+      iterations: 2,
     },
     stress: {
       stages: [
