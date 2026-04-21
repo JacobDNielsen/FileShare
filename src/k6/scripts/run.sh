@@ -351,6 +351,34 @@ build_env_args() {
   if [[ -n "${CLIENT_KEY_PATH:-}" ]]; then
     ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
   fi
+
+  if [[ -n "${AUTH_URL:-}" ]]; then
+    ENV_ARGS+=(-e "AUTH_URL=$AUTH_URL")
+  fi
+
+  if [[ -n "${AUTH_LOGIN_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "AUTH_LOGIN_PATH=$AUTH_LOGIN_PATH")
+  fi
+
+  if [[ -n "${STORAGE_UPLOAD_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "STORAGE_UPLOAD_PATH=$STORAGE_UPLOAD_PATH")
+  fi
+
+  if [[ -n "${STORAGE_LIST_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "STORAGE_LIST_PATH=$STORAGE_LIST_PATH")
+  fi
+
+  if [[ -n "${GATEWAY_AUTH_LOGIN_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_AUTH_LOGIN_PATH=$GATEWAY_AUTH_LOGIN_PATH")
+  fi
+
+  if [[ -n "${GATEWAY_STORAGE_UPLOAD_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_STORAGE_UPLOAD_PATH=$GATEWAY_STORAGE_UPLOAD_PATH")
+  fi
+
+  if [[ -n "${GATEWAY_STORAGE_LIST_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_STORAGE_LIST_PATH=$GATEWAY_STORAGE_LIST_PATH")
+  fi
 }
 
 write_test_info() {
@@ -586,7 +614,7 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
     fi
   fi
 
-  if [[ "$TEST_NAME" == auth_* ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_files || "$TEST_NAME" == gateway_storage_files ]]; then
     prompt_input USERNAME "Enter USERNAME" "${USERNAME:-}"
     prompt_input PASSWORD "Enter PASSWORD" "${PASSWORD:-}" true
   fi
@@ -597,7 +625,7 @@ else
   [[ -n "$PROTO" ]] || fail "PROTO cannot be empty in manual mode"
   [[ -n "$SCENARIO" ]] || fail "SCENARIO cannot be empty in manual mode"
 
-  if [[ "$TEST_NAME" == auth_* ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_files || "$TEST_NAME" == gateway_storage_files ]]; then
     [[ -n "${USERNAME:-}" ]] || fail "USERNAME is required for $TEST_NAME"
     [[ -n "${PASSWORD:-}" ]] || fail "PASSWORD is required for $TEST_NAME"
   fi

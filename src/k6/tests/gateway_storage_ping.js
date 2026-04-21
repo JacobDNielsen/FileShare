@@ -11,9 +11,9 @@ export const options = { ...scenarioOption(SCENARIO), ...getTlsOptions() };
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
 
 export default function () {
-  const response = http.get(`${TARGET_URL}/benchmark/ping`, {
+  const response = http.get(TARGET_URL, {
     tags: {
-      test: "transport_ping",
+      test: "gateway_storage_ping",
       scenario: SCENARIO,
       protocol: TARGET_URL.startsWith("https") ? "https" : "http",
       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
