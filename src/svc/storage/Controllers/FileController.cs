@@ -5,9 +5,6 @@ using Storage.Dto;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
-
-
-
 namespace Storage.Controllers;
 
 [ApiController]

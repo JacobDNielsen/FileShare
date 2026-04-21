@@ -45,6 +45,7 @@ services:
       ReverseProxy__Clusters__storage__Destinations__storage-1__Address: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__lock__Destinations__lock-1__Address: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address: "${INTERNAL_SERVICE_SCHEME}://wopi-host:${INTERNAL_SERVICE_PORT}/"
+
     volumes:
       - *https-mount
     depends_on:
@@ -126,7 +127,7 @@ services:
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       SwaggerGatewayPrefix: /storage
-      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__BaseUrl: "${OPENFGA_BASEURL}"
       OpenFga__StoreId: "${OPENFGA_STORE_ID}"
       OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
@@ -193,7 +194,7 @@ services:
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
       Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
       SwaggerGatewayPrefix: /wopi
-      OpenFga__BaseUrl: "http://openfga:8080"
+      OpenFga__BaseUrl: "${OPENFGA_BASEURL}"
       OpenFga__StoreId: "${OPENFGA_STORE_ID}"
       OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
@@ -242,10 +243,6 @@ services:
     depends_on:
       openfga-migrate:
         condition: service_completed_successfully
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-      - "3000:3000"
 
 volumes:
   auth_data:
