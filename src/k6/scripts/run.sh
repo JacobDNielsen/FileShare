@@ -6,7 +6,7 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # If false, values are read from the configuration block below and .env file. 
 # If true, the user is prompted for values in the terminal, with defaults from the configuration block and .env.
-INTERACTIVE_MODE=true
+INTERACTIVE_MODE=true 
 
 TEST_NAME="auth_login"
 PROTO="https"
@@ -132,8 +132,8 @@ SCENARIOS=(smoke stress spike breakpoint)
 
 validate_proto() {
   case "$1" in
-    http|https) ;;
-    *) fail "Protocol must be http or https. Got: $1" ;;
+    http|https|mtls) ;;
+    *) fail "Protocol must be http, https, or mtls. Got: $1" ;;
   esac
 }
 
@@ -288,23 +288,41 @@ resolve_target_url() {
     return 0
   fi
 
+  local test_upper=""
+  local proto_upper=""
   local service_name=""
   local service_upper=""
+  local full_url_var=""
   local base_var=""
+  local path_var=""
+  local full_url=""
   local base_url=""
+  local test_path=""
 
+  test_upper="$(upper "$test_name")"
+  proto_upper="$(upper "$proto")"
   service_name="$(resolve_service_name "$test_name")"
   service_upper="$(upper "$service_name")"
 
-  base_var="${service_upper}_BASE_$(upper "$proto")"
+  full_url_var="${test_upper}_${proto_upper}"
+  full_url="${!full_url_var:-}"
+  if [[ -n "$full_url" ]]; then
+    printf '%s\n' "$full_url"
+    return 0
+  fi
+
+  base_var="${service_upper}_BASE_${proto_upper}"
+  path_var="${test_upper}_PATH"
   base_url="${!base_var:-}"
+  test_path="${!path_var:-}"
 
   [[ -n "$base_url" ]] || fail "Missing ${base_var}. Set it in .env or provide TARGET_URL directly."
+  [[ -n "$test_path" ]] || fail "Missing ${path_var}. Set it in .env or provide TARGET_URL directly."
 
-  # normalize trailing slash
   base_url="${base_url%/}"
+  [[ "$test_path" == /* ]] || test_path="/$test_path"
 
-  printf '%s\n' "$base_url"
+  printf '%s\n' "${base_url}${test_path}"
 }
 
 build_env_args() {
@@ -324,6 +342,14 @@ build_env_args() {
 
   if [[ -n "${PASSWORD:-}" ]]; then
     ENV_ARGS+=(-e "PASSWORD=$PASSWORD")
+  fi
+
+  if [[ -n "${CLIENT_CERT_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
+  fi
+
+  if [[ -n "${CLIENT_KEY_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
   fi
 }
 
@@ -394,7 +420,7 @@ Options:
   --interactive           Force interactive mode for this run
   --manual                Force manual mode for this run
   --test, -t              Test file name without .js
-  --proto, -p             Protocol: http or https
+  --proto, -p             Protocol: http, https, or mtls
   --scenario, -s          Scenario: ${SCENARIOS[*]}
   --conn-mode             Connection mode: no-reuse | no-vu-reuse
   --target-url            Full target URL, skips env-based URL resolution
@@ -405,7 +431,9 @@ Options:
 
 Env lookup strategy:
   1) <TEST_NAME>_<PROTO>, e.g. AUTH_LOGIN_HTTPS
-  2) <SERVICE>_BASE_<PROTO>, e.g. AUTH_BASE_HTTPS
+  2) Auto-detect service from test name prefix and use:
+     <SERVICE>_BASE_<PROTO> + <TEST_NAME>_PATH
+     e.g. auth_login -> AUTH_BASE_HTTPS + AUTH_LOGIN_PATH
 
 Examples:
   ./run.sh
@@ -534,11 +562,29 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
     prompt_select TEST_NAME "Available tests:" "$TEST_NAME" "${available_tests[@]}"
   fi
 
-  prompt_select PROTO "Choose protocol:" "$PROTO" http https
+  prompt_select PROTO "Choose protocol:" "$PROTO" http https mtls
   prompt_select SCENARIO "Choose scenario:" "$SCENARIO" "${SCENARIOS[@]}"
   prompt_input CONNECTION_MODE "Connection mode override (empty = default k6 behavior, or: no-reuse, no-vu-reuse)" "$CONNECTION_MODE" false true
   prompt_input TARGET_URL "Target URL override for this run only (press Enter to use .env URL resolution)" "$TARGET_URL" false true
 
+  if [[ -z "$TARGET_URL" ]]; then
+    test_upper="$(upper "$TEST_NAME")"
+    proto_upper="$(upper "$PROTO")"
+    service_upper="$(upper "$(resolve_service_name "$TEST_NAME")")"
+    full_url_var="${test_upper}_${proto_upper}"
+    base_var="${service_upper}_BASE_${proto_upper}"
+    path_var="${test_upper}_PATH"
+
+    if [[ -z "${!full_url_var:-}" && -z "${!base_var:-}" ]]; then
+      prompt_input base_input "Enter ${base_var}" "${!base_var:-}"
+      export "$base_var=$base_input"
+    fi
+
+    if [[ -z "${!full_url_var:-}" && -z "${!path_var:-}" ]]; then
+      prompt_input path_input "Enter ${path_var}" "${!path_var:-}"
+      export "$path_var=$path_input"
+    fi
+  fi
 
   if [[ "$TEST_NAME" == auth_* ]]; then
     prompt_input USERNAME "Enter USERNAME" "${USERNAME:-}"
@@ -574,11 +620,6 @@ mkdir -p "$OUT_DIR"
 build_env_args
 write_test_info "$OUT_DIR" "$TEST_FILE" "$ENV_FILE"
 print_run_summary
-
-MKCERT_ROOT="$(mkcert -CAROOT)"
-[[ -f "$MKCERT_ROOT/rootCA.pem" ]] || fail "mkcert rootCA.pem not found"
-
-export SSL_CERT_FILE="$MKCERT_ROOT/rootCA.pem"
 
 k6 run \
   "${ENV_ARGS[@]}" \

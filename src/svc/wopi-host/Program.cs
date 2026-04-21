@@ -6,10 +6,17 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using FileShareApp.Infrastructure;
+using Microsoft.Extensions.Logging;
+using WopiHost.Configuration;
 //using WopiHost.StorageClient;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
+
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, startupLogger);
 
 var jwt = builder.Configuration.GetSection("Authentication:Jwt");
 var issuer = jwt["Issuer"]!.TrimEnd('/');
@@ -27,7 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.Authority = issuer;
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = issuer.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -46,6 +53,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
+    // Use client cert for OIDC discovery / JWKS fetch when on mTLS issuer
+    if (clientCert is not null)
+        options.BackchannelHttpHandler = new HttpClientHandler
+            { ClientCertificates = { clientCert } };
 });
 
 var wopiGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
@@ -101,18 +112,42 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
+// Register typed HttpClients for internal service communication
+HttpMessageHandler MtlsHandler()
+{
+    var handler = new HttpClientHandler();
+    if (clientCert is not null)
+        handler.ClientCertificates.Add(clientCert);
+    return handler;
+}
+
+builder.Services.AddOptions<OpenFgaOptions>()
+    .Bind(builder.Configuration.GetSection(OpenFgaOptions.SectionName))
+    .Validate(config =>
+    {
+        return !string.IsNullOrWhiteSpace(config.BaseUrl) &&
+               !string.IsNullOrWhiteSpace(config.StoreId) &&
+               !string.IsNullOrWhiteSpace(config.AuthorizationModelId);
+    }, "Invalid OpenFGA configuration: BaseUrl, StoreId, and AuthorizationModelId are required")
+    .ValidateOnStart();
+
+builder.Services.AddHttpClient<IOpenFgaService, OpenFgaService>((sp, client) =>
+{
+    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenFgaOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 // Register the typed HttpClient for communicating with the Storage microservice
 builder.Services.AddHttpClient<IStorageClient, StorageClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:Storage:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
-});
+}).ConfigurePrimaryHttpMessageHandler(MtlsHandler);
 
 builder.Services.AddHttpClient<ILockClient, LockClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:LockManager:BaseUrl"]!);
     client.Timeout = TimeSpan.FromSeconds(15);
-});
+}).ConfigurePrimaryHttpMessageHandler(MtlsHandler);
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -122,6 +157,20 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    }).AllowAnonymous().WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "http": {
@@ -19,8 +19,29 @@
       "applicationUrl": "https://localhost:5135;http://localhost:5134",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "Kestrel__Endpoints__Http__Url": "http://localhost:5134",
+        "Kestrel__Endpoints__Https__Url": "https://localhost:5135",
+        "Kestrel__Certificates__Default__Path": "../../../.dev-certs/pfx/fileshare-server.pfx",
         "Authentication__Jwt__Issuer": "https://localhost:5040",
         "SwaggerGatewayPrefix": "/storage"
+      }
+    },
+    "mtls": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "https://localhost:5135;http://localhost:5134",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Kestrel__Endpoints__Http__Url": "http://localhost:5134",
+        "Kestrel__Endpoints__Https__Url": "https://localhost:5135",
+        "Kestrel__Endpoints__Mtls__Url": "https://localhost:5136",
+        "Kestrel__Endpoints__Mtls__ClientCertificateMode": "RequireCertificate",
+        "Kestrel__Certificates__Default__Path": "../../../.dev-certs/pfx/fileshare-server.pfx",
+        "Authentication__Jwt__Issuer": "https://localhost:5041",
+        "SwaggerGatewayPrefix": "/storage",
+        "Mtls__Enabled": "true",
+        "Mtls__ClientCertPath": "../../../.dev-certs/pfx/fileshare-client.pfx"
       }
     }
   }

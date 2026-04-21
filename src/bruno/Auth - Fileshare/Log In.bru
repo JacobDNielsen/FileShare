@@ -1,0 +1,22 @@
+meta {
+  name: Log In
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/authentication/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "mads",
+    "password": "mads"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

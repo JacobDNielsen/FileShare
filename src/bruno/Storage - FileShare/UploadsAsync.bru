@@ -1,0 +1,23 @@
+meta {
+  name: UploadsAsync
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/wopi/files/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: 
+}
+
+body:multipart-form {
+  File: @file(C:\Users\Holte\OneDrive\Desktop\Eksamen text.txt)
+}
+
+settings {
+  encodeUrl: true
+}

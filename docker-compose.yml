@@ -1,14 +1,27 @@
-x-aspnet-https-env: &aspnet-https-env
+# Internal services: three Kestrel listeners (HTTP + HTTPS + mTLS)
+x-kestrel-endpoints: &kestrel-endpoints
   ASPNETCORE_ENVIRONMENT: Development
-  ASPNETCORE_URLS: "http://+:8080;https://+:8443"
-  ASPNETCORE_Kestrel__Certificates__Default__Path: /https/fileshare-dev.pfx
-  ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD}
+  Kestrel__Endpoints__Http__Url: "http://+:8080"
+  Kestrel__Endpoints__Https__Url: "https://+:8443"
+  Kestrel__Endpoints__Https__Certificate__Path: /https/fileshare-server.pfx
+  Kestrel__Endpoints__Https__Certificate__Password: ${DEV_SERVER_CERT_PASSWORD}
+  Kestrel__Endpoints__Mtls__Url: "https://+:9443"
+  Kestrel__Endpoints__Mtls__Certificate__Path: /https/fileshare-server.pfx
+  Kestrel__Endpoints__Mtls__Certificate__Password: ${DEV_SERVER_CERT_PASSWORD}
+  Kestrel__Endpoints__Mtls__ClientCertificateMode: RequireCertificate
+
+# Client cert used for outgoing internal mTLS calls (enabled by INTERNAL_SERVICE_USE_MTLS)
+x-mtls-client: &mtls-client
+  Mtls__Enabled: "${INTERNAL_SERVICE_USE_MTLS:-false}"
+  Mtls__ClientCertPath: /https/fileshare-client.pfx
+  Mtls__ClientCertPassword: ${DEV_CLIENT_CERT_PASSWORD}
 
 x-https-mount: &https-mount ./.dev-certs/pfx:/https:ro
 
 x-ca-build: &ca-build
   additional_contexts:
     ca: ./.dev-certs/ca
+    shared: ./src/shared
 
 services:
   #---------------------------------------------------------------
@@ -23,11 +36,16 @@ services:
       - "8088:8080" # HTTP  host:container
       - "8089:8443" # HTTPS host:container
     environment:
-      <<: *aspnet-https-env
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/fileshare-server.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${DEV_SERVER_CERT_PASSWORD}
+      <<: *mtls-client
       ReverseProxy__Clusters__auth__Destinations__auth-1__Address: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__storage__Destinations__storage-1__Address: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__lock__Destinations__lock-1__Address: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}/"
       ReverseProxy__Clusters__wopi-host__Destinations__wopi-host-1__Address: "${INTERNAL_SERVICE_SCHEME}://wopi-host:${INTERNAL_SERVICE_PORT}/"
+
     volumes:
       - *https-mount
     depends_on:
@@ -64,8 +82,9 @@ services:
     ports:
       - "5039:8080" # HTTP
       - "5040:8443" # HTTPS
+      - "5041:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: *kestrel-endpoints
       ConnectionStrings__DefaultConnection: "Host=auth-db;Port=5432;Database=auth_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
@@ -101,17 +120,22 @@ services:
     ports:
       - "5134:8080" # HTTP
       - "5135:8443" # HTTPS
+      - "5136:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       ConnectionStrings__DefaultConnection: "Host=storage-db;Port=5432;Database=storage_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       SwaggerGatewayPrefix: /storage
+      OpenFga__BaseUrl: "${OPENFGA_BASEURL}"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - storage-db
       - auth
+      - openfga
 
   #---------------------------------------------------------------
   # Lock Service
@@ -138,8 +162,9 @@ services:
     ports:
       - "5038:8080" # HTTP
       - "5037:8443" # HTTPS
+      - "5036:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       ConnectionStrings__DefaultConnection: "Host=lock-db;Port=5432;Database=lock_db;Username=fileshare_user;Password=password"
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
@@ -161,21 +186,66 @@ services:
     ports:
       - "5018:8080" # HTTP
       - "5019:8443" # HTTPS
+      - "5020:9443" # mTLS
     environment:
-      <<: *aspnet-https-env
+      <<: [*kestrel-endpoints, *mtls-client]
       Authentication__Jwt__Issuer: "${INTERNAL_SERVICE_SCHEME}://auth:${INTERNAL_SERVICE_PORT}"
       Authentication__Jwt__Audience: "fileshare"
       Services__Storage__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://storage:${INTERNAL_SERVICE_PORT}"
       Services__LockManager__BaseUrl: "${INTERNAL_SERVICE_SCHEME}://lock:${INTERNAL_SERVICE_PORT}"
       SwaggerGatewayPrefix: /wopi
+      OpenFga__BaseUrl: "${OPENFGA_BASEURL}"
+      OpenFga__StoreId: "${OPENFGA_STORE_ID}"
+      OpenFga__AuthorizationModelId: "${OPENFGA_MODEL_ID}"
     volumes:
       - *https-mount
     depends_on:
       - auth
       - storage
       - lock
+      - openfga
+  
+  #---------------------------------------------------------------
+  # OpenFGA
+  #---------------------------------------------------------------
+  openfga-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: openfga
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - openfga_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d openfga"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  openfga-migrate:
+    image: openfga/openfga:latest
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-db:5432/openfga?sslmode=disable
+    depends_on:
+      openfga-db:
+        condition: service_healthy
+
+  openfga:
+    image: openfga/openfga:latest
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://postgres:password@openfga-db:5432/openfga?sslmode=disable
+      OPENFGA_AUTHN_METHOD: none
+      OPENFGA_PLAYGROUND_ENABLED: "true"
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
 
 volumes:
   auth_data:
   lock_data:
   storage_data:
+  openfga_data:

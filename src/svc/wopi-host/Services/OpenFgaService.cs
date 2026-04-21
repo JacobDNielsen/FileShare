@@ -52,7 +52,6 @@ public class OpenFgaService : IOpenFgaService
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
-
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadFromJsonAsync<OpenFgaCheckResponse>(
