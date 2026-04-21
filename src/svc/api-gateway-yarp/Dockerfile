@@ -4,10 +4,12 @@ WORKDIR /src
 
 # Copy project file first (for caching)
 COPY *.csproj ./
+COPY --from=shared FileShare.Infrastructure/FileShare.Infrastructure.csproj ../shared/FileShare.Infrastructure/
 RUN dotnet restore
 
 # Copy everything else
 COPY . ./
+COPY --from=shared FileShare.Infrastructure/ ../shared/FileShare.Infrastructure/
 
 # Restore + publish
 RUN dotnet restore

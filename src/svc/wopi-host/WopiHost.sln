@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WopiHost", "WopiHost.csproj", "{1E0A29DD-C683-4582-8FF6-258854EF4D52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileShare.Infrastructure", "..\..\shared\FileShare.Infrastructure\FileShare.Infrastructure.csproj", "{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{1E0A29DD-C683-4582-8FF6-258854EF4D52}.Release|x64.Build.0 = Release|Any CPU
 		{1E0A29DD-C683-4582-8FF6-258854EF4D52}.Release|x86.ActiveCfg = Release|Any CPU
 		{1E0A29DD-C683-4582-8FF6-258854EF4D52}.Release|x86.Build.0 = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Debug|x86.Build.0 = Debug|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|x64.Build.0 = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|x86.ActiveCfg = Release|Any CPU
+		{0B62D879-9C7A-47BB-97CA-99EAEB6FDFBA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

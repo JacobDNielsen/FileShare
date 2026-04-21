@@ -6,8 +6,14 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.ComponentModel;
 using Lock.Data;
+using FileShareApp.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+var clientCert = MtlsExtensions.LoadMtlsClientCert(builder.Configuration, startupLogger);
 
 builder.Services.AddDbContext<WopiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -28,7 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.Authority = issuer;
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = issuer.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -47,6 +53,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         NameClaimType = JwtRegisteredClaimNames.PreferredUsername,
         RoleClaimType = ClaimTypes.Role
     };
+    // Use client cert for OIDC discovery / JWKS fetch when on mTLS issuer
+    if (clientCert is not null)
+        options.BackchannelHttpHandler = new HttpClientHandler
+            { ClientCertificates = { clientCert } };
 });
 
 var lockGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
@@ -119,6 +129,22 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    })
+    .AllowAnonymous()
+    .WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

@@ -60,7 +60,7 @@ wopi-host:
 `SwaggerGatewayPrefix` is configured in two places:
 
 - **`docker-compose.yml`** — set per service as an environment variable
-- **`launchSettings.json`** — set in both `http` and `https` profiles for each service
+- **`launchSettings.json`** — set in all launch profiles (`http`, `https`, `mtls`) for each service
 
 Thus, the gateway prefix server URL is always available regardless of how the project is run. In Swagger UI, use the **Servers** dropdown to choose between direct access (`/`) and access via the gateway (e.g. `/auth`).
 
@@ -78,3 +78,9 @@ The YARP gateway has dedicated routes that forward Swagger traffic to each servi
 | `/wopi/{**}`    | WOPI Host (strips `/wopi`)          |
 
 These routes are defined in `src/svc/api-gateway-yarp/appsettings.json`.
+
+---
+
+## Note on mTLS
+
+When running in mTLS mode (`INTERNAL_SERVICE_USE_MTLS=true` in Docker, or the `mtls` launch profile with `dotnet run`), Swagger UI is still available on the normal HTTP and HTTPS ports. The dedicated mTLS ports (`5041`, `5136`, `5036`, `5020`) require a client certificate, so they are not intended for normal browser access without additional certificate setup.

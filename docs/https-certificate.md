@@ -22,10 +22,11 @@ mkcert -install
 
 ## 2. Create the `.env` file
 
-Copy `.env.example` to `.env` in the project root and fill in a password. The password is used for both generating and loading the certificate:
+Copy `.env.example` to `.env` in the project root and fill in passwords for the server and client certificates:
 
 ```env
-HTTPS_CERT_PASSWORD=your-password-here
+DEV_SERVER_CERT_PASSWORD=your-password-here   # fileshare-server.pfx
+DEV_CLIENT_CERT_PASSWORD=your-password-here   # fileshare-client.pfx
 ```
 
 ---
@@ -48,8 +49,8 @@ The generated certificate cover `localhost`, the IPV4 (`127.0.0.1`) + IPV6 (`::1
 
 ```powershell
 mkcert `
-  -cert-file .\.dev-certs\pem\fileshare-dev.crt `
-  -key-file  .\.dev-certs\pem\fileshare-dev.key `
+  -cert-file .\.dev-certs\pem\fileshare-server.crt `
+  -key-file  .\.dev-certs\pem\fileshare-server.key `
   localhost 127.0.0.1 ::1 auth storage lock wopi-host
 ```
 
@@ -57,13 +58,13 @@ mkcert `
 
 ## 5. Convert to PKCS12 (`.pfx`) for ASP.NET Core / Kestrel (This requires OpenSSL)
 
-Use the same password as in the aforementioned `.env` file:
+Use the value from `DEV_SERVER_CERT_PASSWORD` in your `.env` file:
 
 ```powershell
 openssl pkcs12 -export `
-  -out    .\.dev-certs\pfx\fileshare-dev.pfx `
-  -inkey  .\.dev-certs\pem\fileshare-dev.key `
-  -in     .\.dev-certs\pem\fileshare-dev.crt `
+  -out    .\.dev-certs\pfx\fileshare-server.pfx `
+  -inkey  .\.dev-certs\pem\fileshare-server.key `
+  -in     .\.dev-certs\pem\fileshare-server.crt `
   -password pass:your-password-here
 ```
 
@@ -82,17 +83,60 @@ Copy-Item "$caroot\rootCA.pem" .\.dev-certs\ca\rootCA.pem -Force
 
 ## Result
 
-Your `.dev-certs/` directory should now look like this:
+After completing steps 1–6 your `.dev-certs/` directory should look like this:
 
 ```
 .dev-certs/
 ├── ca/
 │   └── rootCA.pem          # mkcert root CA
 ├── pem/
-│   ├── fileshare-dev.crt   # Certificate (PEM)
-│   └── fileshare-dev.key   # Private key (PEM)
+│   ├── fileshare-server.crt   # Server certificate (PEM)
+│   └── fileshare-server.key   # Server private key (PEM)
 └── pfx/
-    └── fileshare-dev.pfx   # Certificate + key bundle for Kestrel
+    └── fileshare-server.pfx   # Server certificate + key bundle for Kestrel
 ```
 
-The `.pfx` file and password are mounted into containers via `docker-compose.yml` and loaded by each service's Kestrel configuration.
+After also completing section 7 (client certificate for mTLS), the directory will also contain:
+
+```
+├── pem/
+│   ├── fileshare-client.crt   # Client certificate (PEM)
+│   └── fileshare-client.key   # Client private key (PEM)
+└── pfx/
+    └── fileshare-client.pfx   # Client certificate bundle for mTLS
+```
+
+The `.dev-certs/pfx/` directory is mounted read-only into every container at `/https/`. Services load `fileshare-server.pfx` as the server certificate and, when mTLS is enabled, load `fileshare-client.pfx` as the outbound client certificate.
+
+---
+
+## 7. Generate the shared client certificate for mTLS
+
+All internal services (gateway, wopi-host, storage, lock) present this certificate when
+connecting to any mTLS listener.
+
+Generate the client certificate with mkcert:
+
+```powershell
+mkcert -client `
+  -cert-file .\.dev-certs\pem\fileshare-client.crt `
+  -key-file  .\.dev-certs\pem\fileshare-client.key `
+  localhost 127.0.0.1 ::1 auth storage lock wopi-host
+```
+
+Bundle to PFX using the value from `DEV_CLIENT_CERT_PASSWORD`:
+
+```powershell
+openssl pkcs12 -export `
+  -out    .\.dev-certs\pfx\fileshare-client.pfx `
+  -inkey  .\.dev-certs\pem\fileshare-client.key `
+  -in     .\.dev-certs\pem\fileshare-client.crt `
+  -password pass:your-password-here
+```
+
+The `/https` Docker volume mount (`.dev-certs/pfx → /https`) makes `fileshare-client.pfx`
+available at `/https/fileshare-client.pfx` inside every container automatically.
+
+> **Production note**: Replace the single shared cert with per-service client certs and
+> validate the connecting cert's CN or thumbprint using
+> `AddCertificate().Events.OnCertificateValidated`.

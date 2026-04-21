@@ -9,21 +9,51 @@ using Auth.Interfaces;
 using Auth.Models;
 using Auth.Data;
 using Auth.Repository;
+using Microsoft.Extensions.Logging;
 
 
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
+using var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var keyPath = "/run/secrets/auth-jwt-key";
+var runningInContainer = string.Equals(
+    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
 
-if (File.Exists(keyPath))
+if (runningInContainer)
 {
-    var key = File.ReadAllText(keyPath);
-    builder.Configuration["Authentication:Jwt:SigningKeys:0:PrivateKey"] = key;
+    var keyPath = "/run/secrets/auth-jwt-key";
+
+    if (File.Exists(keyPath))
+    {
+        try
+        {
+            var key = File.ReadAllText(keyPath);
+            builder.Configuration["Authentication:Jwt:SigningKeys:0:PrivateKey"] = key;
+            startupLogger.LogInformation("Loaded JWT signing key from {KeyPath}.", keyPath);
+        }
+        catch (Exception ex)
+        {
+            startupLogger.LogError(ex, "Failed to read JWT signing key from {KeyPath}.", keyPath);
+            throw;
+        }
+    }
+    else
+    {
+        startupLogger.LogError("JWT signing key file not found at {KeyPath}.", keyPath);
+        throw new InvalidOperationException("Missing JWT key file in container.");
+    }
+}
+else
+{
+    startupLogger.LogInformation("Using JWT signing key from configuration/User Secrets.");
 }
 
 builder.Services.AddOptions<JwtConfig>()
@@ -101,6 +131,20 @@ if (app.Environment.IsDevelopment())
         return Results.Json(config.GetSection("Authentication").AsEnumerable());
     })
     .WithTags("DebugAuthConfiguration");
+    app.MapGet("/debug/mtls", (HttpContext ctx) =>
+    {
+        var cert = ctx.Connection.ClientCertificate;
+        return Results.Ok(new
+        {
+            port = ctx.Connection.LocalPort,
+            clientCert = cert == null ? null : (object)new
+            {
+                subject    = cert.Subject,
+                thumbprint = cert.Thumbprint,
+                notAfter   = cert.NotAfter
+            }
+        });
+    }).AllowAnonymous().WithTags("Debug");
 } else
 {
     app.UseHttpsRedirection();

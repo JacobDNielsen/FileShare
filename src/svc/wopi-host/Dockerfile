@@ -3,17 +3,20 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8443
+EXPOSE 9443
 
 # Build image
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Build context, from docker-compose (.src/svc/wopi-host)
+# Build context, from docker-compose (./src/svc/wopi-host)
 COPY ["WopiHost.csproj", "."]
+COPY --from=shared FileShare.Infrastructure/FileShare.Infrastructure.csproj ../shared/FileShare.Infrastructure/
 RUN dotnet restore
 
 COPY . .
+COPY --from=shared FileShare.Infrastructure/ ../shared/FileShare.Infrastructure/
 RUN dotnet build -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish Image
