@@ -1,10 +1,11 @@
 import http from "k6/http";
-import { check } from "k6";
+import { check, sleep } from "k6";
 import { getEnvVariable, getTlsOptions } from "../helpers/env.js";
 import { scenarioOption } from "../helpers/scenarios.js";
 
 const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
 const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
+const SLEEP_SECONDS = Number(getEnvVariable("SLEEP_SECONDS", { fallback: "0" }));
 
 export const options = { ...scenarioOption(SCENARIO), ...getTlsOptions() };
 
@@ -24,4 +25,8 @@ export default function () {
   check(response, {
     "is status 200": (r) => r.status === 200,
   });
+
+  if (SLEEP_SECONDS > 0) {
+    sleep(SLEEP_SECONDS);
+  }
 }
