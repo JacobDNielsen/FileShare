@@ -35,7 +35,7 @@ export function setup() {
 }
 
 export default function (data) {
-  const protocol = TARGET_URL.startsWith("https") ? "https" : "http";
+  const protocol = __ENV.PROTO || (TARGET_URL.startsWith("https") ? "https" : "http");
   const commonTags = {
     test: "storage_direct_get_file",
     scenario: SCENARIO,

@@ -16,7 +16,7 @@ export default function () {
     tags: {
       test: "gateway_storage_ping",
       scenario: SCENARIO,
-      protocol: TARGET_URL.startsWith("https") ? "https" : "http",
+      protocol: __ENV.PROTO || (TARGET_URL.startsWith("https") ? "https" : "http"),
       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
     },
     timeout: "30s",
