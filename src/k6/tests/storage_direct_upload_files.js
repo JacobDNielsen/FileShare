@@ -22,7 +22,7 @@ export function setup() {
     JSON.stringify({ username: USERNAME, password: PASSWORD }),
     {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      tags: { test: "storage_direct_files", operation: "setup_login" },
+      tags: { test: "storage_direct_upload_files", operation: "setup_login" },
       timeout: "30s",
     }
   );
@@ -38,7 +38,7 @@ export function setup() {
 export default function (data) {
   const protocol = TARGET_URL.startsWith("https") ? "https" : "http";
   const commonTags = {
-    test: "storage_direct_files",
+    test: "storage_direct_upload_files",
     scenario: SCENARIO,
     protocol,
     ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
