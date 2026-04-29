@@ -34,3 +34,13 @@ export function getTlsOptions() {
 
   return opts;
 }
+
+export function joinUrl(baseUrl, path) {
+  if (!baseUrl || !path) {
+    throw new Error("joinUrl requires baseUrl and path");
+  }
+
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const normalizedPath = path.replace(/^\/+/, "");
+  return `${normalizedBase}/${normalizedPath}`;
+}
