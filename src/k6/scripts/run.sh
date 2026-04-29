@@ -365,24 +365,8 @@ build_env_args() {
     ENV_ARGS+=(-e "AUTH_LOGIN_PATH=$AUTH_LOGIN_PATH")
   fi
 
-  if [[ -n "${STORAGE_UPLOAD_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "STORAGE_UPLOAD_PATH=$STORAGE_UPLOAD_PATH")
-  fi
-
-  if [[ -n "${STORAGE_LIST_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "STORAGE_LIST_PATH=$STORAGE_LIST_PATH")
-  fi
-
   if [[ -n "${GATEWAY_AUTH_LOGIN_PATH:-}" ]]; then
     ENV_ARGS+=(-e "GATEWAY_AUTH_LOGIN_PATH=$GATEWAY_AUTH_LOGIN_PATH")
-  fi
-
-  if [[ -n "${GATEWAY_STORAGE_UPLOAD_FILE_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "GATEWAY_STORAGE_UPLOAD_FILE_PATH=$GATEWAY_STORAGE_UPLOAD_FILE_PATH")
-  fi
-
-  if [[ -n "${GATEWAY_STORAGE_LIST_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "GATEWAY_STORAGE_LIST_PATH=$GATEWAY_STORAGE_LIST_PATH")
   fi
   
   if [[ -n "${STORAGE_DIRECT_GET_FILE_PATH:-}" ]]; then
