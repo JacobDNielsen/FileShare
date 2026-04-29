@@ -20,8 +20,10 @@ The `run.sh` helper script was created with the use of Generative AI and then ad
 - `helpers/scenarios.js` — Defines shared k6 scenarios and optional connection reuse overrides
 - `tests/storage_direct_ping.js` — Baseline: k6 → storage ping directly
 - `tests/gateway_storage_ping.js` — Baseline: k6 → gateway → storage ping
-- `tests/storage_direct_files.js` — Realistic: upload + list files directly on storage
-- `tests/gateway_storage_files.js` — Realistic: upload + list files via gateway
+- `tests/storage_direct_upload_files.js` — Realistic: upload + list files directly on storage
+- `tests/gateway_storage_upload_files.js` — Realistic: upload + list files via gateway
+ - `tests/storage_direct_get_file.js` — Realistic: Get file contents directly from storage by FILE_ID
+ - `tests/gateway_storage_get_file.js` — Realistic: Get file contents via gateway by FILE_ID
 - `notebooks/metrics_visualization.ipynb` — Jupyter notebook for visualizing results
 
 ## Prerequisites
@@ -68,6 +70,29 @@ k6 run tests/storage_direct_files.js \
   -e INSECURE_SKIP_TLS_VERIFY=true
 ```
 
+To run the new get-file tests (requires a pre-existing file id):
+
+```bash
+k6 run tests/storage_direct_get_file.js \
+  -e TARGET_URL=https://localhost:5135 \
+  -e AUTH_URL=https://localhost:5040 \
+  -e AUTH_LOGIN_PATH=/authentication/login \
+  -e FILE_ID=<existing-file-id> \
+  -e USERNAME=demo_user \
+  -e PASSWORD=demo_user \
+  -e INSECURE_SKIP_TLS_VERIFY=true
+```
+
+```bash
+k6 run tests/gateway_storage_get_file.js \
+  -e TARGET_URL=https://localhost:8089 \
+  -e GATEWAY_AUTH_LOGIN_PATH=/api/auth/login \
+  -e FILE_ID=<existing-file-id> \
+  -e USERNAME=demo_user \
+  -e PASSWORD=demo_user \
+  -e INSECURE_SKIP_TLS_VERIFY=true
+```
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values.
@@ -95,11 +120,14 @@ Use strategy 1 to override a single test URL without touching the shared base. U
 | `STORAGE_BASE_{PROTO}` | `storage_direct_ping` | Storage service base URL (base+path strategy) |
 | `STORAGE_DIRECT_PING_PATH` | `storage_direct_ping` | Path to storage ping endpoint |
 | `STORAGE_DIRECT_FILES_{PROTO}` | `storage_direct_files` | Storage service base URL (full URL strategy) |
+| `STORAGE_DIRECT_GET_FILE_{PROTO}` | `storage_direct_get_file` | Storage service base URL for get-file (full URL strategy) |
 | `STORAGE_UPLOAD_PATH` | `storage_direct_files` | Path to storage upload endpoint |
 | `STORAGE_LIST_PATH` | `storage_direct_files` | Path to storage list endpoint |
 | `GATEWAY_BASE_{PROTO}` | `gateway_storage_ping` | Gateway base URL (base+path strategy) |
 | `GATEWAY_STORAGE_PING_PATH` | `gateway_storage_ping` | Path to storage ping via gateway |
 | `GATEWAY_STORAGE_FILES_{PROTO}` | `gateway_storage_files` | Gateway base URL (full URL strategy) |
+| `GATEWAY_STORAGE_GET_FILE_{PROTO}` | `gateway_storage_get_file` | Gateway base URL for get-file (full URL strategy) |
+| `FILE_ID` | `*_get_file` | Pre-existing file id used by get-file tests |
 | `GATEWAY_AUTH_LOGIN_PATH` | `gateway_storage_files` | Path to auth login via gateway |
 | `GATEWAY_STORAGE_UPLOAD_PATH` | `gateway_storage_files` | Path to storage upload via gateway |
 | `GATEWAY_STORAGE_LIST_PATH` | `gateway_storage_files` | Path to storage list via gateway |
