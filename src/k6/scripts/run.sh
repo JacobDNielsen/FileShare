@@ -331,6 +331,7 @@ build_env_args() {
     -e "TARGET_URL=$TARGET_URL"
     -e "SCENARIO=$SCENARIO"
     -e "INSECURE_SKIP_TLS_VERIFY=$INSECURE_SKIP_TLS_VERIFY"
+    -e "PROTO=$PROTO"
   )
 
   if [[ -n "$CONNECTION_MODE" ]]; then
@@ -343,14 +344,6 @@ build_env_args() {
 
   if [[ -n "${PASSWORD:-}" ]]; then
     ENV_ARGS+=(-e "PASSWORD=$PASSWORD")
-  fi
-
-  if [[ -n "${CLIENT_CERT_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
-  fi
-
-  if [[ -n "${CLIENT_KEY_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
   fi
 
   if [[ -n "${AUTH_URL:-}" ]]; then
@@ -372,6 +365,14 @@ build_env_args() {
   if [[ -n "${SLEEP_SECONDS:-}" ]]; then
     ENV_ARGS+=(-e "SLEEP_SECONDS=$SLEEP_SECONDS")
   fi
+  
+  if [[ "$PROTO" == "mtls" ]]; then
+  [[ -n "$CLIENT_CERT_PATH" ]] || { echo "CLIENT_CERT_PATH required for mtls"; exit 1; }
+  [[ -n "$CLIENT_KEY_PATH" ]] || { echo "CLIENT_KEY_PATH required for mtls"; exit 1; }
+
+  ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
+  ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
+fi
 }
 
 write_test_info() {
