@@ -1,24 +1,26 @@
 import http from "k6/http";
-import { check } from "k6";
-import { getEnvVariable, getTlsOptions } from "../helpers/env.js";
+import { check, sleep } from "k6";
+import { getEnvVariable, getTlsOptions, joinUrl } from "../helpers/env.js";
 import { scenarioOption } from "../helpers/scenarios.js";
 
 const SCENARIO = getEnvVariable("SCENARIO", { fallback: "smoke" });
 const CONNECTION_MODE = getEnvVariable("CONNECTION_MODE");
+const SLEEP_SECONDS = Number(getEnvVariable("SLEEP_SECONDS", { fallback: "0" }));
 
 export const options = { ...scenarioOption(SCENARIO), ...getTlsOptions() };
 
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
+const GATEWAY_AUTH_URL = getEnvVariable("GATEWAY_AUTH_URL", { required: true });
 const AUTH_LOGIN_PATH = getEnvVariable("GATEWAY_AUTH_LOGIN_PATH", { required: true });
 const FILE_ID = getEnvVariable("FILE_ID", { required: true });
-const FILE_CONTENTS_PATH = getEnvVariable("GATEWAY_STORAGE_FILE_CONTENTS_PATH", { required: true });
+const GET_FILE_PATH = getEnvVariable("GATEWAY_STORAGE_GET_FILE_PATH", { required: true });
 
 const USERNAME = getEnvVariable("USERNAME", { required: true });
 const PASSWORD = getEnvVariable("PASSWORD", { required: true });
 
 export function setup() {
   const loginRes = http.post(
-    `${TARGET_URL}${AUTH_LOGIN_PATH}`,
+    joinUrl(GATEWAY_AUTH_URL, AUTH_LOGIN_PATH),
     JSON.stringify({ username: USERNAME, password: PASSWORD }),
     {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -46,7 +48,7 @@ export default function (data) {
   const authHeader = { Authorization: `Bearer ${data.token}` };
 
   const getRes = http.get(
-    `${TARGET_URL}${FILE_CONTENTS_PATH}`,
+    TARGET_URL,
     {
       headers: authHeader,
       tags: { ...commonTags, operation: "get_file" },
@@ -55,4 +57,8 @@ export default function (data) {
   );
 
   check(getRes, { "get status 200": (r) => r.status === 200 });
+
+  if (SLEEP_SECONDS > 0) {
+    sleep(SLEEP_SECONDS);
+  }
 }
