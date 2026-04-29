@@ -12,9 +12,6 @@ export const options = { ...scenarioOption(SCENARIO), ...getTlsOptions() };
 const TARGET_URL = getEnvVariable("TARGET_URL", { required: true });
 const AUTH_URL = getEnvVariable("AUTH_URL", { required: true });
 const AUTH_LOGIN_PATH = getEnvVariable("AUTH_LOGIN_PATH", { required: true });
-const FILE_ID = getEnvVariable("FILE_ID", { required: true });
-const GET_FILE_PATH = getEnvVariable("STORAGE_DIRECT_GET_FILE_PATH", { required: true });
-
 const USERNAME = getEnvVariable("USERNAME", { required: true });
 const PASSWORD = getEnvVariable("PASSWORD", { required: true });
 

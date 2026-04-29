@@ -69,7 +69,6 @@ k6 run tests/storage_direct_get_file.js \
   -e AUTH_URL=https://localhost:5040 \
   -e AUTH_LOGIN_PATH=/authentication/login \
   -e STORAGE_DIRECT_GET_FILE_PATH=/wopi/files/<file-id>/download \
-  -e FILE_ID=<file-id> \
   -e USERNAME=demo_user \
   -e PASSWORD=demo_user
 ```
@@ -80,7 +79,6 @@ k6 run tests/gateway_storage_get_file.js \
   -e GATEWAY_AUTH_URL=https://localhost:8089 \
   -e GATEWAY_AUTH_LOGIN_PATH=/api/auth/login \
   -e GATEWAY_STORAGE_GET_FILE_PATH=/api/storage/<file-id>/download \
-  -e FILE_ID=<file-id> \
   -e USERNAME=demo_user \
   -e PASSWORD=demo_user
 ```
