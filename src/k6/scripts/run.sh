@@ -377,8 +377,8 @@ build_env_args() {
     ENV_ARGS+=(-e "GATEWAY_AUTH_LOGIN_PATH=$GATEWAY_AUTH_LOGIN_PATH")
   fi
 
-  if [[ -n "${GATEWAY_STORAGE_UPLOAD_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "GATEWAY_STORAGE_UPLOAD_PATH=$GATEWAY_STORAGE_UPLOAD_PATH")
+  if [[ -n "${GATEWAY_STORAGE_UPLOAD_FILE_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_STORAGE_UPLOAD_FILE_PATH=$GATEWAY_STORAGE_UPLOAD_FILE_PATH")
   fi
 
   if [[ -n "${GATEWAY_STORAGE_LIST_PATH:-}" ]]; then
@@ -642,7 +642,7 @@ else
   [[ -n "$PROTO" ]] || fail "PROTO cannot be empty in manual mode"
   [[ -n "$SCENARIO" ]] || fail "SCENARIO cannot be empty in manual mode"
 
-  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_files || "$TEST_NAME" == gateway_storage_files ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_file || "$TEST_NAME" == gateway_storage_file ]]; then
     [[ -n "${USERNAME:-}" ]] || fail "USERNAME is required for $TEST_NAME"
     [[ -n "${PASSWORD:-}" ]] || fail "PASSWORD is required for $TEST_NAME"
   fi
