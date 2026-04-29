@@ -330,6 +330,7 @@ build_env_args() {
     -e "TARGET_URL=$TARGET_URL"
     -e "SCENARIO=$SCENARIO"
     -e "INSECURE_SKIP_TLS_VERIFY=$INSECURE_SKIP_TLS_VERIFY"
+    -e "AUTH_URL=$AUTH_URL"
   )
 
   if [[ -n "$CONNECTION_MODE" ]]; then
@@ -378,6 +379,14 @@ build_env_args() {
 
   if [[ -n "${GATEWAY_STORAGE_LIST_PATH:-}" ]]; then
     ENV_ARGS+=(-e "GATEWAY_STORAGE_LIST_PATH=$GATEWAY_STORAGE_LIST_PATH")
+  fi
+  
+  if [[ -n "${STORAGE_FILE_CONTENTS_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "STORAGE_FILE_CONTENTS_PATH=$STORAGE_FILE_CONTENTS_PATH")
+  fi
+
+  if [[ -n "${GATEWAY_STORAGE_GET_FILE_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_STORAGE_GET_FILE_PATH=$GATEWAY_STORAGE_GET_FILE_PATH")
   fi
 }
 
@@ -614,7 +623,7 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
     fi
   fi
 
-  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_files || "$TEST_NAME" == gateway_storage_files ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == *_get_file || "$TEST_NAME" == *_files ]]; then
     prompt_input USERNAME "Enter USERNAME" "${USERNAME:-}"
     prompt_input PASSWORD "Enter PASSWORD" "${PASSWORD:-}" true
   fi
