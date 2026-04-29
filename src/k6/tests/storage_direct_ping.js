@@ -17,9 +17,8 @@ export default function () {
       test: "storage_direct_ping",
       scenario: SCENARIO,
       protocol: __ENV.PROTO || (TARGET_URL.startsWith("https") ? "https" : "http"),
-      ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
-    },
-    timeout: "30s",
+      ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {})
+    }
   });
 
   check(response, {

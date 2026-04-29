@@ -18,8 +18,7 @@ export default function () {
       scenario: SCENARIO,
       protocol: __ENV.PROTO || (TARGET_URL.startsWith("https") ? "https" : "http"),
       ...(CONNECTION_MODE ? { connection_mode: CONNECTION_MODE } : {}),
-    },
-    timeout: "30s",
+    }
   });
 
   check(response, {

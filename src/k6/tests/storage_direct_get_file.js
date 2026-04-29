@@ -48,8 +48,7 @@ export default function (data) {
     TARGET_URL,
     {
       headers: authHeader,
-      tags: { ...commonTags, operation: "get_file" },
-      timeout: "30s",
+      tags: { ...commonTags, operation: "get_file" }
     }
   );
 
