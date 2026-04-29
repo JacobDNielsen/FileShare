@@ -58,7 +58,7 @@ services:
   # Auth Service
   #---------------------------------------------------------------
   auth-db:
-    image: postgres:16.4-alpine
+    image: postgres:17
     environment:
       POSTGRES_DB: auth_db
       POSTGRES_USER: fileshare_user
@@ -99,7 +99,7 @@ services:
   # Storage Service
   #---------------------------------------------------------------
   storage-db:
-    image: postgres:15-alpine
+    image: postgres:17
     environment:
       POSTGRES_DB: storage_db
       POSTGRES_USER: fileshare_user
@@ -141,7 +141,7 @@ services:
   # Lock Service
   #---------------------------------------------------------------
   lock-db:
-    image: postgres:15-alpine
+    image: postgres:17
     environment:
       POSTGRES_DB: lock_db
       POSTGRES_USER: fileshare_user
