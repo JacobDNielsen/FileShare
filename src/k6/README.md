@@ -77,6 +77,7 @@ k6 run tests/storage_direct_get_file.js \
   -e TARGET_URL=https://localhost:5135 \
   -e AUTH_URL=https://localhost:5040 \
   -e AUTH_LOGIN_PATH=/authentication/login \
+  -e STORAGE_DIRECT_GET_FILE_PATH=/wopi/files/<existing-file-id>/contents \
   -e FILE_ID=<existing-file-id> \
   -e USERNAME=demo_user \
   -e PASSWORD=demo_user \
@@ -86,8 +87,11 @@ k6 run tests/storage_direct_get_file.js \
 ```bash
 k6 run tests/gateway_storage_get_file.js \
   -e TARGET_URL=https://localhost:8089 \
+  -e GATEWAY_AUTH_URL=https://localhost:8089 \
   -e GATEWAY_AUTH_LOGIN_PATH=/api/auth/login \
+  -e GATEWAY_STORAGE_GET_FILE_PATH=/api/storage/<existing-file-id>/contents \
   -e FILE_ID=<existing-file-id> \
+  | `GATEWAY_AUTH_URL` | `gateway_storage_files` | Gateway auth base URL — must match the proto being tested |
   -e USERNAME=demo_user \
   -e PASSWORD=demo_user \
   -e INSECURE_SKIP_TLS_VERIFY=true
@@ -121,12 +125,14 @@ Use strategy 1 to override a single test URL without touching the shared base. U
 | `STORAGE_DIRECT_PING_PATH` | `storage_direct_ping` | Path to storage ping endpoint |
 | `STORAGE_DIRECT_FILES_{PROTO}` | `storage_direct_files` | Storage service base URL (full URL strategy) |
 | `STORAGE_DIRECT_GET_FILE_{PROTO}` | `storage_direct_get_file` | Storage service base URL for get-file (full URL strategy) |
+| `STORAGE_DIRECT_GET_FILE_PATH` | `storage_direct_get_file` | Path to storage get-file endpoint (base+path strategy) |
 | `STORAGE_UPLOAD_PATH` | `storage_direct_files` | Path to storage upload endpoint |
 | `STORAGE_LIST_PATH` | `storage_direct_files` | Path to storage list endpoint |
 | `GATEWAY_BASE_{PROTO}` | `gateway_storage_ping` | Gateway base URL (base+path strategy) |
 | `GATEWAY_STORAGE_PING_PATH` | `gateway_storage_ping` | Path to storage ping via gateway |
 | `GATEWAY_STORAGE_FILES_{PROTO}` | `gateway_storage_files` | Gateway base URL (full URL strategy) |
 | `GATEWAY_STORAGE_GET_FILE_{PROTO}` | `gateway_storage_get_file` | Gateway base URL for get-file (full URL strategy) |
+| `GATEWAY_STORAGE_GET_FILE_PATH` | `gateway_storage_get_file` | Path to gateway get-file endpoint (base+path strategy) |
 | `FILE_ID` | `*_get_file` | Pre-existing file id used by get-file tests |
 | `GATEWAY_AUTH_LOGIN_PATH` | `gateway_storage_files` | Path to auth login via gateway |
 | `GATEWAY_STORAGE_UPLOAD_PATH` | `gateway_storage_files` | Path to storage upload via gateway |
