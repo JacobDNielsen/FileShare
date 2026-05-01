@@ -18,6 +18,9 @@ export function getEnvVariable(variableName, options = {}) {
 }
 
 export function getTlsOptions() {
+  const proto = getEnvVariable("PROTO", { required: true })
+    .trim()
+    .toLowerCase();
   const certPath = getEnvVariable("CLIENT_CERT_PATH");
   const keyPath = getEnvVariable("CLIENT_KEY_PATH");
   const skipVerify = getEnvVariable("INSECURE_SKIP_TLS_VERIFY", { fallback: "false" });
@@ -28,9 +31,29 @@ export function getTlsOptions() {
     opts.insecureSkipTLSVerify = true;
   }
 
-  if (certPath && keyPath) {
-    opts.tlsAuth = [{ cert: open(certPath), key: open(keyPath) }];
+
+  if (proto === "mtls") {
+    if (!certPath || !keyPath) {
+      throw new Error("mTLS requires CLIENT_CERT_PATH and CLIENT_KEY_PATH");
+    }
+
+    opts.tlsAuth = [
+      {
+        cert: open(certPath),
+        key: open(keyPath),
+      },
+    ];
   }
 
   return opts;
+}
+
+export function joinUrl(baseUrl, path) {
+  if (!baseUrl || !path) {
+    throw new Error("joinUrl requires baseUrl and path");
+  }
+
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const normalizedPath = path.replace(/^\/+/, "");
+  return `${normalizedBase}/${normalizedPath}`;
 }

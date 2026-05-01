@@ -12,6 +12,8 @@ TEST_NAME="auth_login"
 PROTO="https"
 SCENARIO="stress"
 TARGET_URL=""               # optional. if set, it will override the .env URL resolution
+AUTH_URL=""                 # optional. if set, it will override the .env AUTH_URL resolution
+GATEWAY_AUTH_URL=""         # optional. if set, it will override the .env GATEWAY_AUTH_URL resolution
 ENV_FILE=".env"             
 RESULTS_DIR="results"      
 INSECURE_SKIP_TLS_VERIFY="" # optional. empty = use value from .env
@@ -320,9 +322,8 @@ resolve_target_url() {
   [[ -n "$test_path" ]] || fail "Missing ${path_var}. Set it in .env or provide TARGET_URL directly."
 
   base_url="${base_url%/}"
-  [[ "$test_path" == /* ]] || test_path="/$test_path"
-
-  printf '%s\n' "${base_url}${test_path}"
+  test_path="${test_path#/}"
+  printf '%s\n' "${base_url}/${test_path}"
 }
 
 build_env_args() {
@@ -330,6 +331,7 @@ build_env_args() {
     -e "TARGET_URL=$TARGET_URL"
     -e "SCENARIO=$SCENARIO"
     -e "INSECURE_SKIP_TLS_VERIFY=$INSECURE_SKIP_TLS_VERIFY"
+    -e "PROTO=$PROTO"
   )
 
   if [[ -n "$CONNECTION_MODE" ]]; then
@@ -344,13 +346,33 @@ build_env_args() {
     ENV_ARGS+=(-e "PASSWORD=$PASSWORD")
   fi
 
-  if [[ -n "${CLIENT_CERT_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
+  if [[ -n "${AUTH_URL:-}" ]]; then
+    ENV_ARGS+=(-e "AUTH_URL=$AUTH_URL")
   fi
 
-  if [[ -n "${CLIENT_KEY_PATH:-}" ]]; then
-    ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
+  if [[ -n "${GATEWAY_AUTH_URL:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_AUTH_URL=$GATEWAY_AUTH_URL")
   fi
+
+  if [[ -n "${AUTH_LOGIN_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "AUTH_LOGIN_PATH=$AUTH_LOGIN_PATH")
+  fi
+
+  if [[ -n "${GATEWAY_AUTH_LOGIN_PATH:-}" ]]; then
+    ENV_ARGS+=(-e "GATEWAY_AUTH_LOGIN_PATH=$GATEWAY_AUTH_LOGIN_PATH")
+  fi
+
+  if [[ -n "${SLEEP_SECONDS:-}" ]]; then
+    ENV_ARGS+=(-e "SLEEP_SECONDS=$SLEEP_SECONDS")
+  fi
+  
+  if [[ "$PROTO" == "mtls" ]]; then
+  [[ -n "$CLIENT_CERT_PATH" ]] || { echo "CLIENT_CERT_PATH required for mtls"; exit 1; }
+  [[ -n "$CLIENT_KEY_PATH" ]] || { echo "CLIENT_KEY_PATH required for mtls"; exit 1; }
+
+  ENV_ARGS+=(-e "CLIENT_CERT_PATH=$CLIENT_CERT_PATH")
+  ENV_ARGS+=(-e "CLIENT_KEY_PATH=$CLIENT_KEY_PATH")
+fi
 }
 
 write_test_info() {
@@ -586,7 +608,7 @@ if [[ "$INTERACTIVE_MODE" == "true" ]]; then
     fi
   fi
 
-  if [[ "$TEST_NAME" == auth_* ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == *_get_file || "$TEST_NAME" == *_files ]]; then
     prompt_input USERNAME "Enter USERNAME" "${USERNAME:-}"
     prompt_input PASSWORD "Enter PASSWORD" "${PASSWORD:-}" true
   fi
@@ -597,7 +619,7 @@ else
   [[ -n "$PROTO" ]] || fail "PROTO cannot be empty in manual mode"
   [[ -n "$SCENARIO" ]] || fail "SCENARIO cannot be empty in manual mode"
 
-  if [[ "$TEST_NAME" == auth_* ]]; then
+  if [[ "$TEST_NAME" == auth_* || "$TEST_NAME" == storage_direct_file || "$TEST_NAME" == gateway_storage_file ]]; then
     [[ -n "${USERNAME:-}" ]] || fail "USERNAME is required for $TEST_NAME"
     [[ -n "${PASSWORD:-}" ]] || fail "PASSWORD is required for $TEST_NAME"
   fi
