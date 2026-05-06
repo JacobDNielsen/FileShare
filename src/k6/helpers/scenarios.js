@@ -41,10 +41,8 @@ export function scenarioOption(scenarioName) {
     },
     spike: {
       stages: [
-        { duration: "10s", target: 0 },
-        { duration: "10s", target: 200 },
-        { duration: "30s", target: 200 },
-        { duration: "10s", target: 0 },
+        { duration: "1m", target: 200 },
+        { duration: "30s", target: 0 }
       ],
     },
     breakpoint: {
