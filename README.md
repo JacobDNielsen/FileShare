@@ -42,7 +42,6 @@ The architecture is built on a set of decoupled microservices that communicate o
 - `src/k6/`: Performance and load testing scripts for latency measurement.
 - `src/bruno/`: API request collections for development and testing.
 - `docs/`: Technical documentation, architecture diagrams, and setup guides.
-- `TEX/`: Academic context and research findings from previous thesis work.
 
 ## Research Project Status and Limitations
 
