@@ -62,6 +62,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     if (clientCert is not null)
         options.BackchannelHttpHandler = new HttpClientHandler
             { ClientCertificates = { clientCert } };
+
+    options.AddAuthLogging(startupLogger);
 });
 
 var storageGatewayPrefix = builder.Configuration["SwaggerGatewayPrefix"];
