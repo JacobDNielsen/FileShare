@@ -1,73 +1,54 @@
-# React + TypeScript + Vite
+# FileShare Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript frontend for the FileShare platform. Communicates exclusively through the YARP API Gateway.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19 + TypeScript
+- Vite 7 (dev server + build)
+- React Router v7 (client-side routing)
+- React Bootstrap (UI components)
+- Axios (HTTP client)
+- js-cookie (JWT persistence)
 
-## React Compiler
+## Getting Started
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Dev server runs on `http://localhost:5173` by default.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+If `.dev-certs/pem/fileshare-dev.crt` and `.dev-certs/pem/fileshare-dev.key` exist (see root `docs/https-certificate.md`), the dev server automatically serves over **HTTPS** on `https://localhost:5173`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The backend must be running — start it from the repo root with `docker compose up --build`.
+
+## How API Calls Work
+
+All requests go through Vite's dev proxy to the YARP API Gateway:
+
+| Protocol | Gateway target |
+|----------|---------------|
+| HTTP     | `http://localhost:8088` |
+| HTTPS    | `https://localhost:8089` |
+
+Frontend code uses relative paths like `/api/storage/...` and Vite forwards them to the correct gateway port. JWT is stored in a cookie and automatically attached to every request via an Axios interceptor.
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/login` | Login with username + password |
+| `/signup` | Create a new account |
+| `/files` | Paginated file list — upload, download, delete |
+| `/files/:fileId` | File detail — rename, overwrite, lock management, WOPI URL |
+
+## Scripts
+
+```bash
+npm run dev      # Start dev server
+npm run build    # Production build (tsc + vite build)
+npm run lint     # ESLint
+npm run preview  # Preview production build
 ```
